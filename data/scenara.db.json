@@ -1,0 +1,1061 @@
+{
+  "schemaVersion": 1,
+  "revision": 1,
+  "workspaces": [
+    {
+      "id": "workspace_scenara_demo",
+      "name": "Scenara Field Lab",
+      "slug": "scenara-field-lab",
+      "createdAt": "2026-09-23T12:12:00.000Z",
+      "memberIds": [
+        "user_anshuman"
+      ]
+    }
+  ],
+  "users": [
+    {
+      "id": "user_anshuman",
+      "name": "Anshuman",
+      "initials": "AB",
+      "role": "owner",
+      "createdAt": "2026-09-23T12:12:00.000Z"
+    }
+  ],
+  "scenes": [
+    {
+      "id": "scene_north_canal_018",
+      "sequence": 18,
+      "slug": "north-canal-04",
+      "title": "North Canal / Block 04",
+      "description": "Urban resilience and accessibility inspection of the south-east canal approach.",
+      "status": "review",
+      "locationLabel": "Pune, Maharashtra",
+      "workspaceId": "workspace_scenara_demo",
+      "coverAssetId": "asset_current_wide",
+      "captureStart": "2026-09-17T04:12:00.000Z",
+      "captureEnd": "2026-09-23T12:17:00.000Z",
+      "createdAt": "2026-09-23T12:12:00.000Z",
+      "updatedAt": "2026-09-23T12:12:00.000Z",
+      "createdBy": "user_anshuman",
+      "activeLensIds": [
+        "general",
+        "safety",
+        "accessibility",
+        "environment"
+      ],
+      "assetIds": [
+        "asset_before_wide",
+        "asset_current_wide",
+        "asset_current_detail",
+        "asset_access_detail",
+        "asset_walkthrough",
+        "asset_field_audio"
+      ],
+      "entityIds": [
+        "entity_barrier",
+        "entity_pole",
+        "entity_curb_ramp",
+        "entity_rain_garden",
+        "entity_crosswalk"
+      ],
+      "observationIds": [
+        "obs_barrier_current",
+        "obs_pole_before",
+        "obs_pole_current",
+        "obs_access_before",
+        "obs_access_current",
+        "obs_garden_before",
+        "obs_garden_current",
+        "obs_crosswalk_before",
+        "obs_crosswalk_current"
+      ],
+      "changeIds": [
+        "change_barrier_appeared",
+        "change_garden_growth",
+        "change_crosswalk_wear"
+      ],
+      "tags": [
+        "urban-resilience",
+        "accessibility",
+        "field-inspection"
+      ],
+      "version": 4
+    }
+  ],
+  "assets": [
+    {
+      "id": "asset_before_wide",
+      "sceneId": "scene_north_canal_018",
+      "kind": "image",
+      "origin": "original",
+      "sourceFilename": "IMG_4198.png",
+      "mimeType": "image/png",
+      "sha256": "assetbeforewide0000000000000000000000000000000000000000000000000",
+      "byteLength": 2800000,
+      "capturedAt": "2026-09-17T04:12:00.000Z",
+      "uploadedAt": "2026-09-23T12:12:00.000Z",
+      "dimensions": {
+        "width": 1536,
+        "height": 1024
+      },
+      "localUrl": "/assets/scene-before.png",
+      "observationIds": [
+        "obs_pole_before",
+        "obs_access_before",
+        "obs_garden_before",
+        "obs_crosswalk_before"
+      ],
+      "provenanceEventIds": [
+        "prv_5d704f2a6d7e4f16b748eeb0bc182fb1"
+      ],
+      "structuredMetadata": {
+        "scenara_scene_id": "scene_north_canal_018",
+        "scenara_origin": "original",
+        "capture_batch": "2026-09-17"
+      },
+      "tags": [
+        "street",
+        "baseline",
+        "wide"
+      ],
+      "version": 1
+    },
+    {
+      "id": "asset_current_wide",
+      "sceneId": "scene_north_canal_018",
+      "kind": "image",
+      "origin": "original",
+      "sourceFilename": "IMG_4221.png",
+      "mimeType": "image/png",
+      "sha256": "assetcurrentwide000000000000000000000000000000000000000000000000",
+      "byteLength": 2800000,
+      "capturedAt": "2026-09-23T12:12:00.000Z",
+      "uploadedAt": "2026-09-23T12:12:00.000Z",
+      "dimensions": {
+        "width": 1536,
+        "height": 1024
+      },
+      "localUrl": "/assets/scene-after.png",
+      "observationIds": [
+        "obs_barrier_current",
+        "obs_pole_current",
+        "obs_access_current",
+        "obs_garden_current",
+        "obs_crosswalk_current"
+      ],
+      "provenanceEventIds": [
+        "prv_d075108d375e4d3083277758ec81cd33"
+      ],
+      "structuredMetadata": {
+        "scenara_scene_id": "scene_north_canal_018",
+        "scenara_origin": "original",
+        "capture_batch": "2026-09-23"
+      },
+      "tags": [
+        "street",
+        "current",
+        "wide",
+        "review"
+      ],
+      "version": 1
+    },
+    {
+      "id": "asset_current_detail",
+      "sceneId": "scene_north_canal_018",
+      "kind": "image",
+      "origin": "original",
+      "sourceFilename": "IMG_4224.png",
+      "mimeType": "image/png",
+      "sha256": "assetcurrentdetail0000000000000000000000000000000000000000000000",
+      "byteLength": 2800000,
+      "capturedAt": "2026-09-23T12:14:00.000Z",
+      "uploadedAt": "2026-09-23T12:12:00.000Z",
+      "dimensions": {
+        "width": 1536,
+        "height": 1024
+      },
+      "localUrl": "/assets/scene-after.png",
+      "observationIds": [
+        "obs_barrier_current"
+      ],
+      "provenanceEventIds": [
+        "prv_bd9474f1a2a84b9b8b855c08c95d84ae"
+      ],
+      "structuredMetadata": {
+        "scenara_scene_id": "scene_north_canal_018",
+        "scenara_origin": "original",
+        "capture_batch": "2026-09-23"
+      },
+      "tags": [
+        "barrier",
+        "curb",
+        "detail"
+      ],
+      "version": 1
+    },
+    {
+      "id": "asset_access_detail",
+      "sceneId": "scene_north_canal_018",
+      "kind": "image",
+      "origin": "original",
+      "sourceFilename": "IMG_4226.png",
+      "mimeType": "image/png",
+      "sha256": "assetaccessdetail00000000000000000000000000000000000000000000000",
+      "byteLength": 2800000,
+      "capturedAt": "2026-09-23T12:16:00.000Z",
+      "uploadedAt": "2026-09-23T12:12:00.000Z",
+      "dimensions": {
+        "width": 1536,
+        "height": 1024
+      },
+      "localUrl": "/assets/scene-after.png",
+      "observationIds": [
+        "obs_access_current"
+      ],
+      "provenanceEventIds": [
+        "prv_678ceadb635a4a1381fc73e892cdfa00"
+      ],
+      "structuredMetadata": {
+        "scenara_scene_id": "scene_north_canal_018",
+        "scenara_origin": "original",
+        "capture_batch": "2026-09-23"
+      },
+      "tags": [
+        "accessibility",
+        "curb-ramp"
+      ],
+      "version": 1
+    },
+    {
+      "id": "asset_walkthrough",
+      "sceneId": "scene_north_canal_018",
+      "kind": "video",
+      "origin": "original",
+      "sourceFilename": "WALK_018.mp4",
+      "mimeType": "video/mp4",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "byteLength": 48400000,
+      "capturedAt": "2026-09-23T12:10:00.000Z",
+      "uploadedAt": "2026-09-23T12:12:00.000Z",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080,
+        "durationSeconds": 112,
+        "frameRate": 30
+      },
+      "posterUrl": "/assets/scene-after.png",
+      "localUrl": "/assets/scene-after.png",
+      "transcriptId": "transcript_walkthrough",
+      "observationIds": [
+        "obs_barrier_current",
+        "obs_pole_current"
+      ],
+      "provenanceEventIds": [
+        "prv_6df6ecac2de440b79413a3d2e41d5e94"
+      ],
+      "structuredMetadata": {
+        "scenara_scene_id": "scene_north_canal_018",
+        "scenara_origin": "original"
+      },
+      "tags": [
+        "walkthrough",
+        "field-audio",
+        "video"
+      ],
+      "version": 1
+    },
+    {
+      "id": "asset_field_audio",
+      "sceneId": "scene_north_canal_018",
+      "kind": "audio",
+      "origin": "original",
+      "sourceFilename": "FIELD_NOTE_018.m4a",
+      "mimeType": "audio/mp4",
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "byteLength": 4200000,
+      "capturedAt": "2026-09-23T12:17:00.000Z",
+      "uploadedAt": "2026-09-23T12:12:00.000Z",
+      "dimensions": {
+        "durationSeconds": 48,
+        "sampleRate": 48000,
+        "channels": 1
+      },
+      "transcriptId": "transcript_audio",
+      "observationIds": [],
+      "provenanceEventIds": [
+        "prv_aebf3f0e7c4b4923a25c35599aba1ed6"
+      ],
+      "structuredMetadata": {
+        "scenara_scene_id": "scene_north_canal_018",
+        "scenara_origin": "original"
+      },
+      "tags": [
+        "field-note",
+        "audio"
+      ],
+      "version": 1
+    }
+  ],
+  "entities": [
+    {
+      "id": "entity_barrier",
+      "sceneId": "scene_north_canal_018",
+      "canonicalLabel": "temporary_barrier",
+      "displayName": "Temporary curb barrier",
+      "aliases": [
+        "temporary barrier",
+        "road barrier",
+        "obstruction"
+      ],
+      "firstObservedAt": "2026-09-23T12:12:00.000Z",
+      "lastObservedAt": "2026-09-23T12:14:00.000Z",
+      "observationIds": [
+        "obs_barrier_current"
+      ],
+      "assetIds": [
+        "asset_current_wide",
+        "asset_current_detail",
+        "asset_walkthrough"
+      ],
+      "centroid": {
+        "x": 0.46,
+        "y": 0.5
+      },
+      "stableAttributes": {
+        "color": "orange",
+        "material": "plastic"
+      },
+      "createdAt": "2026-09-23T12:12:00.000Z",
+      "updatedAt": "2026-09-23T12:12:00.000Z",
+      "version": 1
+    },
+    {
+      "id": "entity_pole",
+      "sceneId": "scene_north_canal_018",
+      "canonicalLabel": "utility_pole",
+      "displayName": "Utility pole",
+      "aliases": [
+        "pole",
+        "wooden pole"
+      ],
+      "firstObservedAt": "2026-09-17T04:12:00.000Z",
+      "lastObservedAt": "2026-09-23T12:12:00.000Z",
+      "observationIds": [
+        "obs_pole_before",
+        "obs_pole_current"
+      ],
+      "assetIds": [
+        "asset_before_wide",
+        "asset_current_wide",
+        "asset_walkthrough"
+      ],
+      "centroid": {
+        "x": 0.9,
+        "y": 0.44
+      },
+      "stableAttributes": {
+        "material": "wood",
+        "alignment": "vertical"
+      },
+      "createdAt": "2026-09-23T12:12:00.000Z",
+      "updatedAt": "2026-09-23T12:12:00.000Z",
+      "version": 2
+    },
+    {
+      "id": "entity_curb_ramp",
+      "sceneId": "scene_north_canal_018",
+      "canonicalLabel": "curb_ramp",
+      "displayName": "Tactile curb ramp",
+      "aliases": [
+        "curb access",
+        "tactile ramp"
+      ],
+      "firstObservedAt": "2026-09-17T04:12:00.000Z",
+      "lastObservedAt": "2026-09-23T12:16:00.000Z",
+      "observationIds": [
+        "obs_access_before",
+        "obs_access_current"
+      ],
+      "assetIds": [
+        "asset_before_wide",
+        "asset_current_wide",
+        "asset_access_detail"
+      ],
+      "centroid": {
+        "x": 0.63,
+        "y": 0.79
+      },
+      "stableAttributes": {
+        "tactile_paving": true
+      },
+      "createdAt": "2026-09-23T12:12:00.000Z",
+      "updatedAt": "2026-09-23T12:12:00.000Z",
+      "version": 2
+    },
+    {
+      "id": "entity_rain_garden",
+      "sceneId": "scene_north_canal_018",
+      "canonicalLabel": "rain_garden",
+      "displayName": "Curbside rain garden",
+      "aliases": [
+        "rain garden",
+        "planted basin",
+        "vegetation"
+      ],
+      "firstObservedAt": "2026-09-17T04:12:00.000Z",
+      "lastObservedAt": "2026-09-23T12:12:00.000Z",
+      "observationIds": [
+        "obs_garden_before",
+        "obs_garden_current"
+      ],
+      "assetIds": [
+        "asset_before_wide",
+        "asset_current_wide"
+      ],
+      "centroid": {
+        "x": 0.71,
+        "y": 0.6
+      },
+      "stableAttributes": {
+        "standing_water": false,
+        "litter": false
+      },
+      "createdAt": "2026-09-23T12:12:00.000Z",
+      "updatedAt": "2026-09-23T12:12:00.000Z",
+      "version": 2
+    },
+    {
+      "id": "entity_crosswalk",
+      "sceneId": "scene_north_canal_018",
+      "canonicalLabel": "crosswalk",
+      "displayName": "Marked crosswalk",
+      "aliases": [
+        "pedestrian crossing",
+        "road markings"
+      ],
+      "firstObservedAt": "2026-09-17T04:12:00.000Z",
+      "lastObservedAt": "2026-09-23T12:12:00.000Z",
+      "observationIds": [
+        "obs_crosswalk_before",
+        "obs_crosswalk_current"
+      ],
+      "assetIds": [
+        "asset_before_wide",
+        "asset_current_wide"
+      ],
+      "centroid": {
+        "x": 0.34,
+        "y": 0.85
+      },
+      "stableAttributes": {
+        "cracking": "minor"
+      },
+      "createdAt": "2026-09-23T12:12:00.000Z",
+      "updatedAt": "2026-09-23T12:12:00.000Z",
+      "version": 2
+    }
+  ],
+  "observations": [
+    {
+      "sceneId": "scene_north_canal_018",
+      "lensId": "general",
+      "confidence": 0.94,
+      "state": "review",
+      "requiresReview": true,
+      "attributes": {
+        "color": "orange",
+        "material": "plastic",
+        "path_impact": "partial",
+        "count": 1
+      },
+      "sourceModel": "cloudinary-ai-vision/general",
+      "createdAt": "2026-09-23T12:12:00.000Z",
+      "updatedAt": "2026-09-23T12:12:00.000Z",
+      "version": 1,
+      "id": "obs_barrier_current",
+      "entityId": "entity_barrier",
+      "label": "Temporary curb obstruction",
+      "canonicalLabel": "temporary_barrier",
+      "description": "An orange temporary barrier reduces the clear pedestrian path near the south-east curb.",
+      "condition": "obstructing pedestrian path",
+      "severity": "medium",
+      "capturedAt": "2026-09-23T12:12:00.000Z",
+      "evidence": [
+        {
+          "assetId": "asset_current_wide",
+          "region": {
+            "x": 0.39,
+            "y": 0.43,
+            "width": 0.14,
+            "height": 0.14
+          },
+          "note": "Wide context view"
+        },
+        {
+          "assetId": "asset_current_detail",
+          "region": {
+            "x": 0.37,
+            "y": 0.4,
+            "width": 0.2,
+            "height": 0.2
+          },
+          "note": "Closer supporting view"
+        },
+        {
+          "assetId": "asset_walkthrough",
+          "frameTimeSeconds": 14,
+          "note": "Barrier visible during approach"
+        }
+      ]
+    },
+    {
+      "sceneId": "scene_north_canal_018",
+      "lensId": "general",
+      "confidence": 0.97,
+      "state": "verified",
+      "requiresReview": false,
+      "attributes": {
+        "material": "wood",
+        "alignment": "vertical"
+      },
+      "sourceModel": "cloudinary-ai-vision/general",
+      "createdAt": "2026-09-23T12:12:00.000Z",
+      "updatedAt": "2026-09-23T12:12:00.000Z",
+      "version": 1,
+      "id": "obs_pole_before",
+      "entityId": "entity_pole",
+      "label": "Utility pole",
+      "canonicalLabel": "utility_pole",
+      "description": "Wooden utility pole with overhead cables at the corner.",
+      "condition": "stable",
+      "severity": "none",
+      "capturedAt": "2026-09-17T04:12:00.000Z",
+      "evidence": [
+        {
+          "assetId": "asset_before_wide",
+          "region": {
+            "x": 0.84,
+            "y": 0.02,
+            "width": 0.12,
+            "height": 0.85
+          }
+        }
+      ]
+    },
+    {
+      "sceneId": "scene_north_canal_018",
+      "lensId": "general",
+      "confidence": 0.98,
+      "state": "verified",
+      "requiresReview": false,
+      "attributes": {
+        "material": "wood",
+        "alignment": "vertical"
+      },
+      "sourceModel": "cloudinary-ai-vision/general",
+      "createdAt": "2026-09-23T12:12:00.000Z",
+      "updatedAt": "2026-09-23T12:12:00.000Z",
+      "version": 1,
+      "id": "obs_pole_current",
+      "entityId": "entity_pole",
+      "label": "Utility pole",
+      "canonicalLabel": "utility_pole",
+      "description": "Pole alignment and overhead cable clearance appear unchanged.",
+      "condition": "stable",
+      "severity": "none",
+      "capturedAt": "2026-09-23T12:12:00.000Z",
+      "evidence": [
+        {
+          "assetId": "asset_current_wide",
+          "region": {
+            "x": 0.84,
+            "y": 0.02,
+            "width": 0.12,
+            "height": 0.85
+          }
+        },
+        {
+          "assetId": "asset_walkthrough",
+          "frameTimeSeconds": 44
+        }
+      ]
+    },
+    {
+      "sceneId": "scene_north_canal_018",
+      "lensId": "accessibility",
+      "confidence": 0.95,
+      "state": "verified",
+      "requiresReview": false,
+      "attributes": {
+        "clear_width_m": 1.4,
+        "tactile_paving": true,
+        "obstruction": false
+      },
+      "sourceModel": "cloudinary-ai-vision/general",
+      "createdAt": "2026-09-23T12:12:00.000Z",
+      "updatedAt": "2026-09-23T12:12:00.000Z",
+      "version": 1,
+      "id": "obs_access_before",
+      "entityId": "entity_curb_ramp",
+      "label": "Tactile curb ramp",
+      "canonicalLabel": "curb_ramp",
+      "description": "Curb ramp with yellow tactile paving and continuous path.",
+      "condition": "clear",
+      "severity": "none",
+      "capturedAt": "2026-09-17T04:12:00.000Z",
+      "evidence": [
+        {
+          "assetId": "asset_before_wide",
+          "region": {
+            "x": 0.55,
+            "y": 0.72,
+            "width": 0.16,
+            "height": 0.14
+          }
+        }
+      ]
+    },
+    {
+      "sceneId": "scene_north_canal_018",
+      "lensId": "accessibility",
+      "confidence": 0.97,
+      "state": "verified",
+      "requiresReview": false,
+      "attributes": {
+        "clear_width_m": 1.4,
+        "tactile_paving": true,
+        "obstruction": false
+      },
+      "sourceModel": "cloudinary-ai-vision/general",
+      "createdAt": "2026-09-23T12:12:00.000Z",
+      "updatedAt": "2026-09-23T12:12:00.000Z",
+      "version": 1,
+      "id": "obs_access_current",
+      "entityId": "entity_curb_ramp",
+      "label": "Tactile curb ramp",
+      "canonicalLabel": "curb_ramp",
+      "description": "Tactile curb ramp remains unobstructed with an estimated 1.4 metre clear width.",
+      "condition": "clear",
+      "severity": "none",
+      "capturedAt": "2026-09-23T12:16:00.000Z",
+      "evidence": [
+        {
+          "assetId": "asset_current_wide",
+          "region": {
+            "x": 0.55,
+            "y": 0.72,
+            "width": 0.16,
+            "height": 0.14
+          }
+        },
+        {
+          "assetId": "asset_access_detail",
+          "region": {
+            "x": 0.53,
+            "y": 0.7,
+            "width": 0.2,
+            "height": 0.18
+          }
+        }
+      ]
+    },
+    {
+      "sceneId": "scene_north_canal_018",
+      "lensId": "environment",
+      "confidence": 0.89,
+      "state": "verified",
+      "requiresReview": false,
+      "attributes": {
+        "vegetation_coverage_percent": 58,
+        "standing_water": false,
+        "litter": false
+      },
+      "sourceModel": "cloudinary-ai-vision/general",
+      "createdAt": "2026-09-23T12:12:00.000Z",
+      "updatedAt": "2026-09-23T12:12:00.000Z",
+      "version": 1,
+      "id": "obs_garden_before",
+      "entityId": "entity_rain_garden",
+      "label": "Curbside rain garden",
+      "canonicalLabel": "rain_garden",
+      "description": "Planted curbside rain garden with moderate vegetation coverage.",
+      "condition": "healthy",
+      "severity": "none",
+      "capturedAt": "2026-09-17T04:12:00.000Z",
+      "evidence": [
+        {
+          "assetId": "asset_before_wide",
+          "region": {
+            "x": 0.58,
+            "y": 0.48,
+            "width": 0.26,
+            "height": 0.24
+          }
+        }
+      ]
+    },
+    {
+      "sceneId": "scene_north_canal_018",
+      "lensId": "environment",
+      "confidence": 0.91,
+      "state": "ai_observation",
+      "requiresReview": false,
+      "attributes": {
+        "vegetation_coverage_percent": 70,
+        "standing_water": false,
+        "litter": false
+      },
+      "sourceModel": "cloudinary-ai-vision/general",
+      "createdAt": "2026-09-23T12:12:00.000Z",
+      "updatedAt": "2026-09-23T12:12:00.000Z",
+      "version": 1,
+      "id": "obs_garden_current",
+      "entityId": "entity_rain_garden",
+      "label": "Curbside rain garden",
+      "canonicalLabel": "rain_garden",
+      "description": "Vegetation coverage increased while the basin remains free of visible standing water.",
+      "condition": "healthy growth",
+      "severity": "none",
+      "capturedAt": "2026-09-23T12:12:00.000Z",
+      "evidence": [
+        {
+          "assetId": "asset_current_wide",
+          "region": {
+            "x": 0.58,
+            "y": 0.48,
+            "width": 0.26,
+            "height": 0.24
+          }
+        }
+      ]
+    },
+    {
+      "sceneId": "scene_north_canal_018",
+      "lensId": "safety",
+      "confidence": 0.9,
+      "state": "verified",
+      "requiresReview": false,
+      "attributes": {
+        "paint_visibility_percent": 76,
+        "cracking": "minor"
+      },
+      "sourceModel": "cloudinary-ai-vision/general",
+      "createdAt": "2026-09-23T12:12:00.000Z",
+      "updatedAt": "2026-09-23T12:12:00.000Z",
+      "version": 1,
+      "id": "obs_crosswalk_before",
+      "entityId": "entity_crosswalk",
+      "label": "Marked crosswalk",
+      "canonicalLabel": "crosswalk",
+      "description": "Painted crosswalk with visible surface wear.",
+      "condition": "moderate wear",
+      "severity": "low",
+      "capturedAt": "2026-09-17T04:12:00.000Z",
+      "evidence": [
+        {
+          "assetId": "asset_before_wide",
+          "region": {
+            "x": 0.08,
+            "y": 0.72,
+            "width": 0.52,
+            "height": 0.25
+          }
+        }
+      ]
+    },
+    {
+      "sceneId": "scene_north_canal_018",
+      "lensId": "safety",
+      "confidence": 0.86,
+      "state": "review",
+      "requiresReview": true,
+      "attributes": {
+        "paint_visibility_percent": 69,
+        "cracking": "minor"
+      },
+      "sourceModel": "cloudinary-ai-vision/general",
+      "createdAt": "2026-09-23T12:12:00.000Z",
+      "updatedAt": "2026-09-23T12:12:00.000Z",
+      "version": 1,
+      "id": "obs_crosswalk_current",
+      "entityId": "entity_crosswalk",
+      "label": "Marked crosswalk",
+      "canonicalLabel": "crosswalk",
+      "description": "Crosswalk paint has slightly reduced visibility along two central stripes.",
+      "condition": "advanced wear",
+      "severity": "low",
+      "capturedAt": "2026-09-23T12:12:00.000Z",
+      "evidence": [
+        {
+          "assetId": "asset_current_wide",
+          "region": {
+            "x": 0.08,
+            "y": 0.72,
+            "width": 0.52,
+            "height": 0.25
+          }
+        }
+      ]
+    }
+  ],
+  "changes": [
+    {
+      "id": "change_barrier_appeared",
+      "sceneId": "scene_north_canal_018",
+      "entityId": "entity_barrier",
+      "afterObservationId": "obs_barrier_current",
+      "kind": "appeared",
+      "significance": "meaningful",
+      "title": "Temporary obstruction appeared",
+      "description": "An orange curb barrier is visible in the current capture and absent from the baseline.",
+      "confidence": 0.94,
+      "firstSeenAt": "2026-09-23T12:12:00.000Z",
+      "lastSeenAt": "2026-09-23T12:14:00.000Z",
+      "evidenceAssetIds": [
+        "asset_before_wide",
+        "asset_current_wide",
+        "asset_current_detail",
+        "asset_walkthrough"
+      ],
+      "requiresReview": true,
+      "createdAt": "2026-09-23T12:12:00.000Z",
+      "version": 1
+    },
+    {
+      "id": "change_garden_growth",
+      "sceneId": "scene_north_canal_018",
+      "entityId": "entity_rain_garden",
+      "beforeObservationId": "obs_garden_before",
+      "afterObservationId": "obs_garden_current",
+      "kind": "modified",
+      "significance": "minor",
+      "title": "Vegetation coverage increased",
+      "description": "Estimated visible vegetation coverage increased from 58% to 70%.",
+      "confidence": 0.9,
+      "firstSeenAt": "2026-09-17T04:12:00.000Z",
+      "lastSeenAt": "2026-09-23T12:12:00.000Z",
+      "evidenceAssetIds": [
+        "asset_before_wide",
+        "asset_current_wide"
+      ],
+      "requiresReview": false,
+      "createdAt": "2026-09-23T12:12:00.000Z",
+      "version": 1
+    },
+    {
+      "id": "change_crosswalk_wear",
+      "sceneId": "scene_north_canal_018",
+      "entityId": "entity_crosswalk",
+      "beforeObservationId": "obs_crosswalk_before",
+      "afterObservationId": "obs_crosswalk_current",
+      "kind": "modified",
+      "significance": "minor",
+      "title": "Crosswalk visibility decreased",
+      "description": "Estimated paint visibility decreased from 76% to 69%.",
+      "confidence": 0.85,
+      "firstSeenAt": "2026-09-17T04:12:00.000Z",
+      "lastSeenAt": "2026-09-23T12:12:00.000Z",
+      "evidenceAssetIds": [
+        "asset_before_wide",
+        "asset_current_wide"
+      ],
+      "requiresReview": true,
+      "createdAt": "2026-09-23T12:12:00.000Z",
+      "version": 1
+    }
+  ],
+  "transcripts": [
+    {
+      "id": "transcript_walkthrough",
+      "assetId": "asset_walkthrough",
+      "language": "en",
+      "source": "cloudinary",
+      "createdAt": "2026-09-23T12:12:00.000Z",
+      "version": 1,
+      "text": "Approaching the south-east corner. The temporary barrier narrows the path here. The curb ramp itself remains clear. The utility pole appears stable. The rain garden has filled out since the previous visit.",
+      "segments": [
+        {
+          "id": "segment_walk_001",
+          "text": "Approaching the south-east corner.",
+          "startSeconds": 3.2,
+          "endSeconds": 7.8,
+          "linkedObservationIds": []
+        },
+        {
+          "id": "segment_walk_002",
+          "text": "The temporary barrier narrows the path here.",
+          "startSeconds": 13.7,
+          "endSeconds": 18.9,
+          "linkedObservationIds": [
+            "obs_barrier_current"
+          ]
+        },
+        {
+          "id": "segment_walk_003",
+          "text": "The curb ramp itself remains clear.",
+          "startSeconds": 24.1,
+          "endSeconds": 28.6,
+          "linkedObservationIds": [
+            "obs_access_current"
+          ]
+        },
+        {
+          "id": "segment_walk_004",
+          "text": "The utility pole appears stable.",
+          "startSeconds": 43.8,
+          "endSeconds": 47.4,
+          "linkedObservationIds": [
+            "obs_pole_current"
+          ]
+        },
+        {
+          "id": "segment_walk_005",
+          "text": "The rain garden has filled out since the previous visit.",
+          "startSeconds": 66.2,
+          "endSeconds": 73.1,
+          "linkedObservationIds": [
+            "obs_garden_current"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "transcript_audio",
+      "assetId": "asset_field_audio",
+      "language": "en",
+      "source": "cloudinary",
+      "createdAt": "2026-09-23T12:12:00.000Z",
+      "version": 1,
+      "text": "Follow up on barrier ownership. Confirm whether it can be shifted away from the accessible route before the morning peak.",
+      "segments": [
+        {
+          "id": "segment_audio_001",
+          "text": "Follow up on barrier ownership.",
+          "startSeconds": 1.1,
+          "endSeconds": 4.7,
+          "linkedObservationIds": [
+            "obs_barrier_current"
+          ]
+        },
+        {
+          "id": "segment_audio_002",
+          "text": "Confirm whether it can be shifted away from the accessible route before the morning peak.",
+          "startSeconds": 5,
+          "endSeconds": 12.8,
+          "linkedObservationIds": [
+            "obs_barrier_current",
+            "obs_access_current"
+          ]
+        }
+      ]
+    }
+  ],
+  "analyses": [],
+  "reviews": [],
+  "provenance": [
+    {
+      "id": "prv_5d704f2a6d7e4f16b748eeb0bc182fb1",
+      "sceneId": "scene_north_canal_018",
+      "assetId": "asset_before_wide",
+      "action": "captured",
+      "actorType": "human",
+      "actorId": "user_anshuman",
+      "inputFingerprint": "assetbeforewide0000000000000000000000000000000000000000000000000",
+      "outputFingerprint": "f9b8f3efa02fc1b986440db84ef32f92ea48dd299894432702bcd7cd09d690e3",
+      "parameters": {
+        "capturedAt": "2026-09-17T04:12:00.000Z",
+        "sourceFilename": "IMG_4198.png",
+        "origin": "original"
+      },
+      "occurredAt": "2026-09-23T10:26:16.892Z",
+      "hash": "b84b184a58753220b7f6ec1c11649807c5348f52c11731fb7d7e40c5ac02bb90"
+    },
+    {
+      "id": "prv_d075108d375e4d3083277758ec81cd33",
+      "sceneId": "scene_north_canal_018",
+      "assetId": "asset_current_wide",
+      "action": "captured",
+      "actorType": "human",
+      "actorId": "user_anshuman",
+      "inputFingerprint": "assetcurrentwide000000000000000000000000000000000000000000000000",
+      "outputFingerprint": "d60bc5c9708df821e7b78207e43d3f51b8fb7c22dd2e91280d6933542abbe942",
+      "parameters": {
+        "capturedAt": "2026-09-23T12:12:00.000Z",
+        "sourceFilename": "IMG_4221.png",
+        "origin": "original"
+      },
+      "occurredAt": "2026-09-23T10:26:16.898Z",
+      "hash": "890c594536e5073cf89fd34301ffb067f9b85d1ad129a23b9eb4910cee94673b"
+    },
+    {
+      "id": "prv_bd9474f1a2a84b9b8b855c08c95d84ae",
+      "sceneId": "scene_north_canal_018",
+      "assetId": "asset_current_detail",
+      "action": "captured",
+      "actorType": "human",
+      "actorId": "user_anshuman",
+      "inputFingerprint": "assetcurrentdetail0000000000000000000000000000000000000000000000",
+      "outputFingerprint": "44ed2dd318f6cebd1ec891b17512cc92854eb4010823932ad8a4f28704665934",
+      "parameters": {
+        "capturedAt": "2026-09-23T12:14:00.000Z",
+        "sourceFilename": "IMG_4224.png",
+        "origin": "original"
+      },
+      "occurredAt": "2026-09-23T10:26:16.898Z",
+      "hash": "f75d5b1d96793132df7b806da89bab625de7eca11aa5bc13f889609f5b95e90c"
+    },
+    {
+      "id": "prv_678ceadb635a4a1381fc73e892cdfa00",
+      "sceneId": "scene_north_canal_018",
+      "assetId": "asset_access_detail",
+      "action": "captured",
+      "actorType": "human",
+      "actorId": "user_anshuman",
+      "inputFingerprint": "assetaccessdetail00000000000000000000000000000000000000000000000",
+      "outputFingerprint": "e0e754f2105f83bad878caee5c68e059606c80e5835ed7542e57e93fbc484062",
+      "parameters": {
+        "capturedAt": "2026-09-23T12:16:00.000Z",
+        "sourceFilename": "IMG_4226.png",
+        "origin": "original"
+      },
+      "occurredAt": "2026-09-23T10:26:16.898Z",
+      "hash": "9af0026c657ed61009b4b2224ed0b7330bb0d0422f50a3d88ddf7f97c8c4aef7"
+    },
+    {
+      "id": "prv_6df6ecac2de440b79413a3d2e41d5e94",
+      "sceneId": "scene_north_canal_018",
+      "assetId": "asset_walkthrough",
+      "action": "captured",
+      "actorType": "human",
+      "actorId": "user_anshuman",
+      "inputFingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "outputFingerprint": "6db065b58700a3dc001e24b3ecd5d7a2ad2bda03bd6739cf458897bb964340c0",
+      "parameters": {
+        "capturedAt": "2026-09-23T12:10:00.000Z",
+        "sourceFilename": "WALK_018.mp4",
+        "origin": "original"
+      },
+      "occurredAt": "2026-09-23T10:26:16.899Z",
+      "hash": "18157844fdd877fcdb5d8b946176c4df5018ac0b26c4a9c8e127353fad76df9b"
+    },
+    {
+      "id": "prv_aebf3f0e7c4b4923a25c35599aba1ed6",
+      "sceneId": "scene_north_canal_018",
+      "assetId": "asset_field_audio",
+      "action": "captured",
+      "actorType": "human",
+      "actorId": "user_anshuman",
+      "inputFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "outputFingerprint": "54d0b68913d6f9a2b36b18337113ce0bdcb3f8628b2af036d22e31affa1afb7b",
+      "parameters": {
+        "capturedAt": "2026-09-23T12:17:00.000Z",
+        "sourceFilename": "FIELD_NOTE_018.m4a",
+        "origin": "original"
+      },
+      "occurredAt": "2026-09-23T10:26:16.899Z",
+      "hash": "afc35913cb94bb770486a889cab8a57f0e80b9b0cf81828551e05903ebbb438e"
+    }
+  ],
+  "scenarios": [],
+  "jobs": []
+}
