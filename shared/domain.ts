@@ -129,6 +129,22 @@ export interface ObservationEvidence {
   note?: string
 }
 
+export interface ObservationPolicyAssessment {
+  ruleId: string
+  profile: 'balanced' | 'risk_sensitive' | 'high_precision' | 'rapid_screen'
+  temporalMode: 'single_capture' | 'change_detection'
+  decision: 'accept' | 'review' | 'suppress'
+  modelConfidence: number
+  adjustedConfidence: number
+  corroboratingSources: number
+  temporalAgreement: boolean
+  hasContradiction: boolean
+  reviewReasons: string[]
+  missingRequiredFields: string[]
+  appliedAdjustments: Array<{ kind: string; value: number; explanation: string }>
+  evaluatedAt: ISODateTime
+}
+
 export interface Observation {
   id: UUID
   sceneId: UUID
@@ -142,6 +158,7 @@ export interface Observation {
   confidence: number
   state: ObservationState
   requiresReview: boolean
+  policy?: ObservationPolicyAssessment
   evidence: ObservationEvidence[]
   attributes: Record<string, string | number | boolean | string[] | null>
   sourceModel: string

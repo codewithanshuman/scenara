@@ -1,0 +1,10 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "noCheck": true,
+    "isolatedModules": false,
+    "types": []
+  },
+  "include": ["./**/*.ts", "../server/**/*.ts", "../shared/**/*.ts"]
+}

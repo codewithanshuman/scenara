@@ -3,6 +3,8 @@ import path from 'node:path'
 export interface ServerConfig {
   port: number
   dataPath: string
+  databaseUrl?: string
+  serverless?: boolean
   publicOrigin: string
   cloudinary: {
     cloudName?: string
@@ -33,11 +35,14 @@ export function loadConfig(): ServerConfig {
   const cloudName = optional('CLOUDINARY_CLOUD_NAME')
   const apiKey = optional('CLOUDINARY_API_KEY')
   const apiSecret = optional('CLOUDINARY_API_SECRET')
+  const vercelHost = optional('VERCEL_PROJECT_PRODUCTION_URL') ?? optional('VERCEL_URL')
 
   return {
     port: integer('SCENARA_PORT', 8787),
     dataPath: path.resolve(optional('SCENARA_DATA_PATH') ?? './data/scenara.db.json'),
-    publicOrigin: optional('SCENARA_PUBLIC_ORIGIN') ?? 'http://127.0.0.1:5173',
+    databaseUrl: optional('DATABASE_URL') ?? optional('POSTGRES_URL'),
+    serverless: Boolean(optional('VERCEL') || optional('SCENARA_SERVERLESS')),
+    publicOrigin: optional('SCENARA_PUBLIC_ORIGIN') ?? (vercelHost ? `https://${vercelHost}` : 'http://127.0.0.1:5173'),
     cloudinary: {
       cloudName,
       apiKey,

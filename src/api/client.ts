@@ -79,6 +79,8 @@ export interface AnalyzeAssetInput {
   lensId: Observation['lensId']
   force?: boolean
   async?: boolean
+  policyProfile?: 'balanced' | 'risk_sensitive' | 'high_precision' | 'rapid_screen'
+  temporalMode?: 'single_capture' | 'change_detection'
 }
 
 export interface ScenarioInput {

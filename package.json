@@ -2,6 +2,7 @@
   "name": "scenara",
   "private": true,
   "version": "1.0.0",
+  "packageManager": "pnpm@11.25.0",
   "type": "module",
   "scripts": {
     "dev": "concurrently -k -n api,web -c magenta,cyan \"pnpm dev:api\" \"pnpm dev:web\"",
@@ -15,20 +16,22 @@
     "generate:knowledge": "tsx tools/generate-knowledge-catalog.ts"
   },
   "dependencies": {
-    "@types/node": "latest",
     "@vitejs/plugin-react": "latest",
+    "dotenv": "^18.0.3",
     "lucide-react": "latest",
     "motion": "latest",
+    "postgres": "^3.4.9",
     "react": "latest",
     "react-dom": "latest",
     "tsx": "latest",
-    "typescript": "latest",
     "vite": "latest",
     "zod": "latest"
   },
   "devDependencies": {
+    "@types/node": "24.10.0",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "concurrently": "^10.0.5"
+    "concurrently": "^10.0.5",
+    "typescript": "5.9.3"
   }
 }

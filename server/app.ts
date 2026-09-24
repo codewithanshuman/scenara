@@ -8,7 +8,7 @@ import {
   UploadSignatureSchema,
 } from '../shared/contracts.js'
 import type { ServerConfig } from './config.js'
-import { JsonDatabase } from './db/store.js'
+import type { DatabaseStore } from './db/store.js'
 import { buildVisionPrompt, parseVisionResponse, type VisionAnalysis } from './analysis/schema.js'
 import { CloudinaryClient } from './integrations/cloudinary.js'
 import { EntityLinker } from './engine/entity-linker.js'
@@ -33,18 +33,18 @@ type AnalyzeAssetInput = z.infer<typeof AnalyzeAssetSchema>
 
 export class ScenaraApplication {
   readonly config: ServerConfig
-  readonly database: JsonDatabase
+  readonly database: DatabaseStore
   readonly cloudinary: CloudinaryClient
   readonly linker: EntityLinker
   readonly jobs: DurableJobQueue
   readonly knowledge: KnowledgeCatalogStore
 
-  constructor(config: ServerConfig, database: JsonDatabase) {
+  constructor(config: ServerConfig, database: DatabaseStore) {
     this.config = config
     this.database = database
     this.cloudinary = new CloudinaryClient(config.cloudinary)
     this.linker = new EntityLinker()
-    this.jobs = new DurableJobQueue(database, 2)
+    this.jobs = new DurableJobQueue(database, 2, config.serverless ? 'inline' : 'background')
     this.knowledge = new KnowledgeCatalogStore()
   }
 
@@ -53,6 +53,8 @@ export class ScenaraApplication {
     return {
       status: 'ok',
       mode: this.cloudinary.enabled ? 'cloudinary' : 'local-adapter',
+      persistence: this.database.kind,
+      execution: this.config.serverless ? 'request-safe-inline' : 'background-worker',
       revision: snapshot.revision,
       counts: {
         scenes: snapshot.scenes.length,
@@ -333,21 +335,26 @@ export class ScenaraApplication {
     const snapshot = this.database.snapshot()
     const asset = snapshot.assets.find(item => item.id === input.assetId)
     if (!asset) throw new NotFoundError('Asset', input.assetId)
-    const requestFingerprint = sha256(`${asset.sha256}:${input.lensId}:${asset.version}:v1`)
+    const baseFingerprint = sha256(`${asset.sha256}:${input.lensId}:${input.policyProfile}:${input.temporalMode}:${asset.version}:v2`)
+    const requestFingerprint = input.force ? sha256(`${baseFingerprint}:${now()}:${createId('rerun')}`) : baseFingerprint
     const existing = snapshot.analyses.find(item => item.requestFingerprint === requestFingerprint && !input.force)
-    if (existing) return { analysis: existing, job: snapshot.jobs.find(item => item.id === existing.id) }
+    const existingJob = existing && snapshot.jobs.find(item => item.payload.analysisId === existing.id)
+    if (existing && existingJob) return { analysis: existing, job: existingJob }
 
     const timestamp = now()
     const analysis: AnalysisRun = {
       id: createId('analysis'), sceneId: asset.sceneId, assetId: asset.id, lensId: input.lensId,
       status: 'queued', provider: this.cloudinary.enabled ? 'cloudinary_ai_vision' : 'local_adapter',
       model: this.cloudinary.enabled ? 'ai_vision_general' : 'scenara-local-fixture-v1',
-      promptVersion: 'scene-observation-v1', requestFingerprint, observationIds: [], createdAt: timestamp, version: 1,
+      promptVersion: 'scene-observation-v2-policy-grounded', requestFingerprint, observationIds: [], createdAt: timestamp, version: 1,
     }
     await this.database.transaction(draft => { draft.analyses.push(analysis) })
     const job = await this.jobs.enqueue({
       sceneId: asset.sceneId, assetId: asset.id, kind: 'analyze', maxAttempts: 3,
-      idempotencyKey: requestFingerprint, payload: { analysisId: analysis.id, assetId: asset.id, lensId: input.lensId, async: input.async },
+      idempotencyKey: requestFingerprint, payload: {
+        analysisId: analysis.id, assetId: asset.id, lensId: input.lensId, async: input.async,
+        policyProfile: input.policyProfile, temporalMode: input.temporalMode,
+      },
     }, async context => {
       await context.progress(8, 'Preparing structured vision request')
       const latest = this.database.snapshot().assets.find(item => item.id === asset.id)!
@@ -355,7 +362,18 @@ export class ScenaraApplication {
       let rawResponse: unknown
       if (this.cloudinary.enabled) {
         await context.progress(22, 'Cloudinary AI Vision analyzing asset')
-        const response = await this.cloudinary.analyze({ asset: latest, lensId: input.lensId, prompt: buildVisionPrompt(input.lensId), async: false })
+        const policyContext = this.knowledge.promptContext({
+          lensId: input.lensId,
+          profile: input.policyProfile,
+          temporalMode: input.temporalMode,
+          maxRules: 16,
+        })
+        const response = await this.cloudinary.analyze({
+          asset: latest,
+          lensId: input.lensId,
+          prompt: buildVisionPrompt(input.lensId, policyContext),
+          async: false,
+        })
         rawResponse = response.raw
         if (!response.value) throw new ValidationError('Cloudinary completed analysis without a structured value')
         vision = parseVisionResponse(response.value)
@@ -366,11 +384,60 @@ export class ScenaraApplication {
       }
       await context.progress(62, 'Normalizing observations')
       const created: string[] = []
+      const policyEvaluations: Array<Record<string, unknown>> = []
       for (const item of vision.observations) {
+        const current = this.database.snapshot()
+        const historical = current.observations.filter(observation =>
+          observation.sceneId === latest.sceneId
+          && observation.canonicalLabel === item.canonical_label
+          && observation.state !== 'dismissed',
+        )
+        const corroboratingSources = new Set([
+          latest.id,
+          ...historical.flatMap(observation => observation.evidence.map(evidence => evidence.assetId)),
+        ]).size
+        const temporalAgreement = historical.some(observation =>
+          Boolean(item.condition && observation.condition)
+          && observation.condition!.toLowerCase() === item.condition!.toLowerCase(),
+        )
+        const hasContradiction = historical.some(observation => this.observationsContradict(observation, item.condition, item.attributes))
+        const rule = this.knowledge.findBest(item.canonical_label, input.policyProfile, input.temporalMode)
+        const evaluation = rule ? evaluateKnowledgePolicy(rule, {
+          ruleId: rule.id,
+          modelConfidence: item.confidence,
+          proposedSeverity: item.severity ?? undefined,
+          proposedState: 'ai_observation',
+          facts: Object.entries(item.attributes).map(([key, value]) => ({ key, value, confidence: item.confidence })),
+          corroboratingSources,
+          temporalAgreement,
+          hasContradiction,
+        }) : undefined
+        policyEvaluations.push({
+          canonicalLabel: item.canonical_label,
+          matchedRuleId: rule?.id,
+          ...(evaluation ?? { decision: 'unmatched', adjustedConfidence: item.confidence }),
+        })
+        if (evaluation?.decision === 'suppress') continue
         const observation = await this.createObservation({
           sceneId: latest.sceneId, lensId: input.lensId, label: item.label, canonicalLabel: item.canonical_label,
           description: item.description, condition: item.condition ?? undefined, severity: item.severity ?? undefined,
-          confidence: item.confidence, requiresReview: item.requires_review,
+          confidence: evaluation?.adjustedConfidence ?? item.confidence,
+          requiresReview: item.requires_review || evaluation?.requiresReview === true,
+          ...(evaluation && rule ? { policy: {
+            ruleId: rule.id,
+            profile: input.policyProfile,
+            temporalMode: input.temporalMode,
+            decision: evaluation.decision,
+            modelConfidence: item.confidence,
+            adjustedConfidence: evaluation.adjustedConfidence,
+            corroboratingSources,
+            temporalAgreement,
+            hasContradiction,
+            reviewReasons: evaluation.reviewReasons,
+            missingRequiredFields: evaluation.missingRequiredFields,
+            appliedAdjustments: evaluation.appliedAdjustments,
+            evaluatedAt: now(),
+          } } : {}),
           evidence: [{ assetId: latest.id, ...(item.region ? { region: item.region } : {}) }],
           attributes: item.attributes, sourceModel: analysis.model, sourceAnalysisId: analysis.id, capturedAt: latest.capturedAt,
         })
@@ -381,7 +448,9 @@ export class ScenaraApplication {
       await this.database.transaction(draft => {
         const index = draft.analyses.findIndex(item => item.id === analysis.id)
         if (index >= 0) draft.analyses[index] = {
-          ...draft.analyses[index], status: 'succeeded', rawResponse, observationIds: created,
+          ...draft.analyses[index], status: 'succeeded',
+          rawResponse: { providerResponse: rawResponse, policyProfile: input.policyProfile, temporalMode: input.temporalMode, policyEvaluations },
+          observationIds: created,
           startedAt: context.job.startedAt ?? timestamp, completedAt: now(), version: draft.analyses[index].version + 1,
         }
       })
@@ -406,7 +475,8 @@ export class ScenaraApplication {
       payload: { scenarioId: scenario.id, ...input },
     }, async context => {
       await context.progress(20, 'Validating immutable source')
-      await context.progress(55, this.cloudinary.enabled ? 'Cloudinary generative transformation queued' : 'Local scenario adapter preparing preview')
+      const delivery = this.cloudinary.buildScenarioDelivery(source, input.transformation, input.prompt, input.parameters)
+      await context.progress(55, delivery.provider === 'cloudinary' ? 'Cloudinary generative transformation prepared' : 'Local scenario adapter preparing preview')
       const output: MediaAsset = {
         ...source,
         id: createId('asset'), origin: 'generated', parentAssetId: source.id,
@@ -416,13 +486,25 @@ export class ScenaraApplication {
         structuredMetadata: { ...source.structuredMetadata, scenara_origin: 'generated', scenara_scenario_id: scenario.id },
         tags: [...new Set([...source.tags, 'generated-scenario'])], version: 1,
       }
+      if (output.cloudinary && delivery.provider === 'cloudinary') {
+        output.cloudinary = { ...output.cloudinary, secureUrl: delivery.url }
+        output.posterUrl = delivery.url
+        delete output.localUrl
+      }
       await this.database.transaction(draft => {
         const scene = draft.scenes.find(item => item.id === input.sceneId)!
         const scenarioIndex = draft.scenarios.findIndex(item => item.id === scenario.id)
         const event = appendProvenance(draft.provenance, {
           sceneId: scene.id, assetId: output.id, action: 'generated', actorType: 'system', actorId: 'scenara-scenario-engine',
           inputFingerprint: assetFingerprint(source), outputFingerprint: assetFingerprint(output),
-          parameters: { scenarioId: scenario.id, transformation: input.transformation, prompt: input.prompt, generated: true },
+          parameters: {
+            scenarioId: scenario.id,
+            transformation: input.transformation,
+            cloudinaryTransformation: delivery.transformation,
+            prompt: input.prompt,
+            generated: true,
+            visiblyWatermarked: delivery.provider === 'cloudinary',
+          },
           providerReference: source.cloudinary?.assetId,
         })
         output.provenanceEventIds.push(event.id)
@@ -432,7 +514,7 @@ export class ScenaraApplication {
         draft.scenarios[scenarioIndex] = { ...draft.scenarios[scenarioIndex], outputAssetId: output.id, status: 'succeeded', completedAt: now(), version: 2 }
       })
       await context.progress(100, 'Scenario ready', { outputAssetId: output.id })
-      return { scenarioId: scenario.id, outputAssetId: output.id }
+      return { scenarioId: scenario.id, outputAssetId: output.id, deliveryUrl: delivery.url, provider: delivery.provider }
     })
     return { scenario, jobId: job.id }
   }
@@ -447,7 +529,7 @@ export class ScenaraApplication {
     return job
   }
 
-  private sceneSummary(scene: Scene, snapshot: ReturnType<JsonDatabase['snapshot']>) {
+  private sceneSummary(scene: Scene, snapshot: ReturnType<DatabaseStore['snapshot']>) {
     const assets = snapshot.assets.filter(item => item.sceneId === scene.id)
     const observations = snapshot.observations.filter(item => item.sceneId === scene.id)
     const changes = snapshot.changes.filter(item => item.sceneId === scene.id)
@@ -468,6 +550,27 @@ export class ScenaraApplication {
     let index = 2
     while (scenes.some(item => item.slug === slug)) slug = `${base}-${index++}`
     return slug
+  }
+
+  private observationsContradict(
+    historical: Observation,
+    proposedCondition: string | null,
+    proposedAttributes: Record<string, string | number | boolean | string[] | null>,
+  ): boolean {
+    for (const [key, value] of Object.entries(proposedAttributes)) {
+      const previous = historical.attributes[key]
+      if (typeof value === 'boolean' && typeof previous === 'boolean' && value !== previous) return true
+    }
+    if (!historical.condition || !proposedCondition) return false
+    const previous = historical.condition.toLowerCase()
+    const next = proposedCondition.toLowerCase()
+    const opposites: Array<[string, string]> = [
+      ['clear', 'blocked'], ['clear', 'obstruct'], ['open', 'closed'], ['present', 'missing'],
+      ['intact', 'damaged'], ['stable', 'unstable'], ['dry', 'wet'], ['active', 'inactive'],
+    ]
+    return opposites.some(([left, right]) =>
+      (previous.includes(left) && next.includes(right)) || (previous.includes(right) && next.includes(left)),
+    )
   }
 
   private localVisionFixture(asset: MediaAsset, lensId: Observation['lensId']): VisionAnalysis {

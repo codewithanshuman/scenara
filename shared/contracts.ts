@@ -87,6 +87,23 @@ export const CreateObservationSchema = z.object({
   severity: z.enum(['none', 'low', 'medium', 'high', 'critical']).optional(),
   confidence: z.number().min(0).max(1),
   requiresReview: z.boolean().default(false),
+  policy: z.object({
+    ruleId: z.string().min(1).max(240),
+    profile: z.enum(['balanced', 'risk_sensitive', 'high_precision', 'rapid_screen']),
+    temporalMode: z.enum(['single_capture', 'change_detection']),
+    decision: z.enum(['accept', 'review', 'suppress']),
+    modelConfidence: z.number().min(0).max(1),
+    adjustedConfidence: z.number().min(0).max(1),
+    corroboratingSources: z.number().int().min(1),
+    temporalAgreement: z.boolean(),
+    hasContradiction: z.boolean(),
+    reviewReasons: z.array(z.string().max(1_000)).max(40),
+    missingRequiredFields: z.array(z.string().max(160)).max(100),
+    appliedAdjustments: z.array(z.object({
+      kind: z.string().max(160), value: z.number(), explanation: z.string().max(1_000),
+    })).max(40),
+    evaluatedAt: ISODateSchema,
+  }).optional(),
   evidence: z.array(ObservationEvidenceSchema).min(1).max(100),
   attributes: z.record(z.string(), z.union([
     z.string(), z.number(), z.boolean(), z.array(z.string()), z.null(),
@@ -151,4 +168,6 @@ export const AnalyzeAssetSchema = z.object({
   lensId: LensSchema,
   force: z.boolean().default(false),
   async: z.boolean().default(true),
+  policyProfile: z.enum(['balanced', 'risk_sensitive', 'high_precision', 'rapid_screen']).default('balanced'),
+  temporalMode: z.enum(['single_capture', 'change_detection']).default('single_capture'),
 })

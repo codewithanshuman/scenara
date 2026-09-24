@@ -1,11 +1,13 @@
+import 'dotenv/config'
 import { loadConfig } from './config.js'
 import { JsonDatabase } from './db/store.js'
+import { PostgresDatabase } from './db/postgres.js'
 import { seedDatabase } from './seed.js'
 import { ScenaraApplication } from './app.js'
 import { createHttpServer } from './http.js'
 
 const config = loadConfig()
-const database = new JsonDatabase(config.dataPath)
+const database = config.databaseUrl ? new PostgresDatabase(config.databaseUrl) : new JsonDatabase(config.dataPath)
 await database.initialize(seedDatabase())
 const application = new ScenaraApplication(config, database)
 const server = createHttpServer(application)

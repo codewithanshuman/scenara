@@ -102,11 +102,48 @@ export function createHttpServer(app: ScenaraApplication) {
     route('POST', '/api/jobs/:jobId/cancel', context => app.jobs.cancel(context.params.jobId).then(cancelled => ({ cancelled }))),
   ]
 
-  return createServer(async (request, response) => {
+  return createServer(createRequestHandler(app, routes))
+}
+
+export function createRequestHandler(app: ScenaraApplication, configuredRoutes?: Route[]) {
+  const routes = configuredRoutes ?? [
+    route('GET', '/api/health', () => app.status()),
+    route('GET', '/api/scenes', context => app.listScenes({
+      status: context.query.get('status') ?? undefined,
+      workspaceId: context.query.get('workspaceId') ?? undefined,
+      limit: Number(context.query.get('limit') ?? 100),
+    })),
+    route('POST', '/api/scenes', async context => app.createScene(await context.json(), context.actorId)),
+    route('GET', '/api/scenes/:sceneId', context => app.getScene(context.params.sceneId)),
+    route('PATCH', '/api/scenes/:sceneId', async context => app.updateScene(context.params.sceneId, await context.json())),
+    route('GET', '/api/scenes/:sceneId/graph', context => app.graph(
+      context.params.sceneId,
+      context.query.get('rootId') ?? undefined,
+      Number(context.query.get('depth') ?? 1),
+    )),
+    route('POST', '/api/scenes/:sceneId/changes/rebuild', context => app.rebuildChanges(context.params.sceneId)),
+    route('GET', '/api/scenes/:sceneId/jobs', context => app.jobsForScene(context.params.sceneId)),
+    route('POST', '/api/assets', async context => app.registerAsset(await context.json(), context.actorId)),
+    route('GET', '/api/assets/:assetId/provenance', context => app.provenance(context.params.assetId)),
+    route('POST', '/api/observations', async context => app.createObservation(await context.json())),
+    route('POST', '/api/observations/:observationId/review', async context => app.reviewObservation(context.params.observationId, await context.json(), context.actorId)),
+    route('POST', '/api/search', async context => app.search(await context.json())),
+    route('GET', '/api/knowledge', () => app.knowledgeMetadata()),
+    route('GET', '/api/knowledge/rules', context => app.queryKnowledge(Object.fromEntries(context.query.entries()))),
+    route('GET', '/api/knowledge/rules/:ruleId', context => app.knowledgeRule(context.params.ruleId)),
+    route('POST', '/api/knowledge/evaluate', async context => app.evaluatePolicy(await context.json())),
+    route('POST', '/api/uploads/signature', async context => app.uploadSignature(await context.json())),
+    route('POST', '/api/analyze', async context => app.analyzeAsset(await context.json())),
+    route('POST', '/api/scenarios', async context => app.createScenario(await context.json(), context.actorId)),
+    route('GET', '/api/jobs/:jobId', context => app.getJob(context.params.jobId)),
+    route('POST', '/api/jobs/:jobId/cancel', context => app.jobs.cancel(context.params.jobId).then(cancelled => ({ cancelled }))),
+  ]
+  return async (request: IncomingMessage, response: ServerResponse) => {
     const requestId = createId('req')
     const origin = app.config.publicOrigin
     if (request.method === 'OPTIONS') { writeJson(response, 204, {}, origin); return }
     try {
+      await app.database.refresh()
       const url = new URL(request.url ?? '/', `http://${request.headers.host ?? '127.0.0.1'}`)
       const method = request.method?.toUpperCase() ?? 'GET'
       let selected: Route | undefined
@@ -131,5 +168,5 @@ export function createHttpServer(app: ScenaraApplication) {
       const failure: ApiFailure = { error: appError.toServiceError(), meta: { requestId, timestamp: new Date().toISOString() } }
       writeJson(response, appError.status, failure, app.config.publicOrigin)
     }
-  })
+  }
 }

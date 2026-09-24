@@ -10,11 +10,21 @@ export interface TransactionContext {
 
 export type DatabaseMutation<T> = (draft: DatabaseShape, context: TransactionContext) => T | Promise<T>
 
+export interface DatabaseStore {
+  readonly kind: 'json' | 'postgres'
+  readonly revision: number
+  initialize(seed?: DatabaseShape): Promise<void>
+  refresh(): Promise<void>
+  snapshot(): DatabaseShape
+  transaction<T>(mutation: DatabaseMutation<T>, expectedRevision?: number): Promise<T>
+  replace(next: DatabaseShape, expectedRevision?: number): Promise<void>
+}
+
 function clone<T>(value: T): T {
   return structuredClone(value)
 }
 
-function emptyDatabase(): DatabaseShape {
+export function emptyDatabase(): DatabaseShape {
   return {
     schemaVersion: 1,
     revision: 0,
@@ -35,6 +45,7 @@ function emptyDatabase(): DatabaseShape {
 }
 
 export class JsonDatabase {
+  readonly kind = 'json' as const
   readonly filePath: string
   #state: DatabaseShape = emptyDatabase()
   #writeQueue: Promise<void> = Promise.resolve()
@@ -59,6 +70,10 @@ export class JsonDatabase {
       await this.persist(this.#state)
     }
     this.#initialized = true
+  }
+
+  async refresh(): Promise<void> {
+    this.ensureInitialized()
   }
 
   snapshot(): DatabaseShape {

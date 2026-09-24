@@ -58,9 +58,16 @@ export class KnowledgeCatalogStore {
   }
 
   findBest(conceptId:string,profile='balanced',temporalMode='single_capture'):ObservationKnowledgeRule|undefined {
+    const needle=normalize(conceptId)
+    const candidates=this.catalog.rules.filter(rule=>
+      normalize(rule.conceptId)===needle
+      ||normalize(rule.canonicalLabel)===needle
+      ||rule.aliases.some(alias=>normalize(alias)===needle),
+    )
     return this.byId.get(`${conceptId}.${profile}.${temporalMode}`)
-      ?? this.catalog.rules.find(rule=>rule.conceptId===conceptId&&rule.profile===profile)
-      ?? this.catalog.rules.find(rule=>rule.conceptId===conceptId)
+      ?? candidates.find(rule=>rule.profile===profile&&rule.temporalMode===temporalMode)
+      ?? candidates.find(rule=>rule.profile===profile)
+      ?? candidates[0]
   }
 
   query(query:KnowledgeQuery={}):KnowledgeQueryResult {

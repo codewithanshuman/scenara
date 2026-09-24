@@ -52,10 +52,11 @@ Node HTTP application service
   └─ durable background job queue
                   │
                   ▼
-Atomic JSON persistence + generated knowledge catalog
+PostgreSQL JSONB aggregate (production) / atomic JSON (local)
+                  + generated knowledge catalog
 ```
 
-The JSON store is intentionally dependency-light for judging and local execution. Transactions serialize through a write queue, clone their working snapshot, persist to a temporary file, and rename atomically. Its interface is isolated so PostgreSQL or SQLite can replace it without changing the application service.
+Local development uses an atomic JSON store. Vercel uses PostgreSQL: the complete scene aggregate is locked with `SELECT … FOR UPDATE`, validated, revision-checked, and committed as one JSONB transaction. This preserves cross-collection invariants under concurrent serverless requests without depending on an ephemeral function filesystem.
 
 ## Run locally
 
@@ -165,9 +166,22 @@ The two matched scene captures in `public/assets/` were created specifically for
 
 ## Deployment notes
 
-- Place the API behind TLS and a reverse proxy.
-- Store the database on a durable volume or replace the store adapter.
-- Restrict `SCENARA_PUBLIC_ORIGIN` to the deployed frontend.
+The repository contains a production Vercel function at `api/index.ts` and a checked-in `vercel.json`. Connect a Neon Postgres integration to the Vercel project so `DATABASE_URL` is injected, then add the Cloudinary values as encrypted Vercel environment variables.
+
+```bash
+pnpm dlx vercel@latest link
+pnpm dlx vercel@latest env add CLOUDINARY_CLOUD_NAME production
+pnpm dlx vercel@latest env add CLOUDINARY_API_KEY production
+pnpm dlx vercel@latest env add CLOUDINARY_API_SECRET production
+pnpm dlx vercel@latest env add CLOUDINARY_UPLOAD_FOLDER production
+pnpm dlx vercel@latest deploy --prod
+```
+
+The production adapter creates its state table automatically and seeds the initial workspace exactly once. Concurrent writes are serialized transactionally. Analysis and scenario jobs execute inside the request on Vercel so the platform cannot freeze unfinished background work after a response.
+
+- Vercel supplies TLS and routes the Vite client plus Node API as one origin.
+- Keep `DATABASE_URL` and Cloudinary credentials server-only.
+- Set `SCENARA_PUBLIC_ORIGIN` when serving the API to another origin.
 - Deliver secrets through the host secret manager, never through Vite variables.
 - Configure a Cloudinary notification URL before enabling asynchronous production callbacks.
 - Back up both the database and original Cloudinary assets.

@@ -1,5 +1,5 @@
 import type { PipelineJob, ServiceError } from '../../shared/domain.js'
-import { JsonDatabase } from '../db/store.js'
+import type { DatabaseStore } from '../db/store.js'
 import { asAppError } from '../lib/errors.js'
 import { createId, now } from '../lib/id.js'
 
@@ -19,15 +19,17 @@ interface QueuedWork {
 }
 
 export class DurableJobQueue {
-  readonly database: JsonDatabase
+  readonly database: DatabaseStore
   readonly concurrency: number
+  readonly executionMode: 'background' | 'inline'
   #pending: QueuedWork[] = []
   #running = new Set<string>()
   #cancelled = new Set<string>()
 
-  constructor(database: JsonDatabase, concurrency = 2) {
+  constructor(database: DatabaseStore, concurrency = 2, executionMode: 'background' | 'inline' = 'background') {
     this.database = database
     this.concurrency = Math.max(1, concurrency)
+    this.executionMode = executionMode
   }
 
   async enqueue(
@@ -50,7 +52,12 @@ export class DurableJobQueue {
       updatedAt: timestamp,
     }
     await this.database.transaction(draft => { draft.jobs.push(job) })
-    this.#pending.push({ id: job.id, handler })
+    const work = { id: job.id, handler }
+    if (this.executionMode === 'inline') {
+      await this.execute(work)
+      return this.database.snapshot().jobs.find(item => item.id === job.id) ?? job
+    }
+    this.#pending.push(work)
     queueMicrotask(() => void this.drain())
     return job
   }

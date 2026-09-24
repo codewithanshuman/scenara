@@ -72,6 +72,14 @@ export interface CloudinarySearchResponse {
   resources: CloudinarySearchResource[]
 }
 
+export type ScenarioTransformation = 'remove' | 'replace' | 'recolor' | 'fill' | 'restore' | 'background_replace'
+
+export interface ScenarioDelivery {
+  url: string
+  transformation: string
+  provider: 'cloudinary' | 'local'
+}
+
 function encodeContext(context: Record<string, string> | undefined): string | undefined {
   if (!context) return undefined
   return Object.entries(context)
@@ -96,6 +104,11 @@ function basicAuth(key: string, secret: string): string {
 function safePublicId(filename: string): string {
   const base = filename.replace(/\.[^.]+$/, '').normalize('NFKD')
   return base.replace(/[^a-zA-Z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'capture'
+}
+
+function promptValue(value: unknown, fallback: string): string {
+  const normalized = String(value ?? fallback).trim().slice(0, 500)
+  return encodeURIComponent(normalized).replaceAll('%2F', '%252F')
 }
 
 export class CloudinaryClient {
@@ -255,6 +268,50 @@ export class CloudinaryClient {
     const version = `v${asset.cloudinary.version}`
     const extension = options.format === 'auto' ? asset.cloudinary.format : options.format ?? asset.cloudinary.format
     return `https://res.cloudinary.com/${cloud}/${asset.cloudinary.resourceType}/upload/${transformation}/${version}/${asset.cloudinary.publicId}.${extension}`
+  }
+
+  buildScenarioDelivery(
+    asset: MediaAsset,
+    transformation: ScenarioTransformation,
+    prompt: string,
+    parameters: Record<string, unknown>,
+  ): ScenarioDelivery {
+    if (!asset.cloudinary || !this.enabled) {
+      return { url: asset.localUrl ?? asset.cloudinary?.secureUrl ?? '', transformation: 'local_identity_preview', provider: 'local' }
+    }
+    if (asset.kind !== 'image') {
+      throw new AppError(422, 'SCENARIO_MEDIA_UNSUPPORTED', 'Generative scenario transformations currently require an image source')
+    }
+    const target = promptValue(parameters.target, prompt)
+    const replacement = promptValue(parameters.replacement, prompt)
+    const color = promptValue(parameters.color, 'fresh white')
+    const steps: string[] = []
+    switch (transformation) {
+      case 'remove':
+        steps.push(`e_gen_remove:prompt_${target};remove-shadow_true`)
+        break
+      case 'replace':
+        steps.push(`e_gen_replace:from_${target};to_${replacement};preserve-geometry_true`)
+        break
+      case 'recolor':
+        steps.push(`e_gen_recolor:prompt_(${target});to-color_${color};multiple_true`)
+        break
+      case 'fill': {
+        const aspectRatio = String(parameters.aspectRatio ?? '16:9').replace(/[^0-9:.]/g, '') || '16:9'
+        steps.push(`ar_${aspectRatio},c_pad,b_gen_fill:prompt_${promptValue(parameters.fillPrompt, prompt)}`)
+        break
+      }
+      case 'restore':
+        steps.push('e_gen_restore')
+        break
+      case 'background_replace':
+        steps.push(`e_gen_background_replace:prompt_${promptValue(parameters.background, prompt)}`)
+        break
+    }
+    steps.push('co_white,b_rgb:11182799,l_text:Arial_32_bold:SIMULATED')
+    steps.push('fl_layer_apply,g_south_east,x_24,y_24')
+    const url = this.buildDeliveryUrl(asset, steps, { format: 'auto', quality: 'auto:good' })
+    return { url, transformation: steps.join('/'), provider: 'cloudinary' }
   }
 
   private requireEnabled(message: string): void {

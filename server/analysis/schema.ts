@@ -107,7 +107,7 @@ const lensInstructions: Record<LensId, string> = {
   custom: 'Follow the configured workspace lens while remaining strictly grounded in visible evidence.',
 }
 
-export function buildVisionPrompt(lensId: LensId): string {
+export function buildVisionPrompt(lensId: LensId, policyContext = ''): string {
   return [
     'You are the visual observation stage of Scenara, an evidence intelligence system.',
     'Analyze only what is visibly supported by this media. Separate observation from inference.',
@@ -115,6 +115,7 @@ export function buildVisionPrompt(lensId: LensId): string {
     'Prefer a smaller set of high-quality, stable observations over speculative detail.',
     'Set requires_review to true for ambiguity, uncertain severity, safety implications, or confidence below 0.8.',
     `Active lens: ${lensId}. ${lensInstructions[lensId]}`,
+    policyContext,
     'Return JSON matching this schema exactly:',
     '```json',
     JSON.stringify(schemaObject, null, 2),
