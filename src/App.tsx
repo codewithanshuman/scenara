@@ -18,6 +18,7 @@ import { CommandPalette } from './workbench/CommandPalette'
 import { PipelinePanel } from './workbench/PipelinePanel'
 import { IngestDialog } from './workbench/IngestDialog'
 import { ScenarioDialog } from './workbench/ScenarioDialog'
+import { ReviewDesk } from './workbench/ReviewDesk'
 import './workbench/workbench.css'
 
 export default function App() {
@@ -25,13 +26,14 @@ export default function App() {
   const [railCollapsed, setRailCollapsed] = useState(false)
   const [inspectorVisible, setInspectorVisible] = useState(true)
   const [overview, setOverview] = useState(true)
+  const [reviewMode, setReviewMode] = useState(false)
   const [selectedGraphNodeId, setSelectedGraphNodeId] = useState<string>()
 
   useEffect(() => {
     const navigate = (event: KeyboardEvent) => {
       if (event.ctrlKey || event.metaKey || event.altKey || state.commandOpen || state.ingestOpen || state.pipelineOpen || state.scenarioOpen) return
       if ((event.target as HTMLElement)?.closest('input, textarea, select, [contenteditable="true"]')) return
-      if (['1','2','3','4'].includes(event.key)) setOverview(false)
+      if (['1','2','3','4'].includes(event.key)) { setOverview(false); setReviewMode(false) }
     }
     addEventListener('keydown', navigate)
     return () => removeEventListener('keydown', navigate)
@@ -49,11 +51,13 @@ export default function App() {
 
   function navigate(mode: WorkbenchMode | 'overview') {
     setOverview(mode === 'overview')
+    setReviewMode(false)
     if (mode !== 'overview') actions.setMode(mode)
   }
 
   function selectScene(id: string) {
     setOverview(false)
+    setReviewMode(false)
     setSelectedGraphNodeId(undefined)
     actions.setMode('canvas')
     if (id !== state.selectedSceneId) actions.selectScene(id)
@@ -61,7 +65,8 @@ export default function App() {
 
   function openReview(observation?: Observation) {
     const finding = observation ?? scene.observations.find(item => item.requiresReview) ?? scene.observations[0]
-    navigate('canvas')
+    setOverview(false)
+    setReviewMode(true)
     actions.setLens('general')
     if (finding) actions.selectObservation(finding.id)
     actions.setInspectorTab('review')
@@ -108,11 +113,11 @@ export default function App() {
     }
   }
 
-  return <MotionConfig reducedMotion="user"><div className={`scenara-app ${railCollapsed ? 'rail-collapsed' : ''} ${!inspectorVisible ? 'inspector-hidden' : ''} ${overview ? 'is-overview' : ''}`}>
-    <AppHeader scene={scene} health={state.health} overview={overview} onHome={() => setOverview(true)} onCommand={() => actions.toggle('commandOpen',true)} onIngest={() => actions.toggle('ingestOpen',true)} onPipeline={() => actions.toggle('pipelineOpen',true)}/>
-    <SceneRail scenes={state.scenes} selectedId={state.selectedSceneId} collapsed={railCollapsed} overview={overview} mode={state.mode} onCollapse={() => setRailCollapsed(!railCollapsed)} onSelect={selectScene} onNavigate={navigate} onReview={() => openReview()} onIngest={() => actions.toggle('ingestOpen',true)}/>
+  return <MotionConfig reducedMotion="user"><div className={`scenara-app ${railCollapsed ? 'rail-collapsed' : ''} ${!inspectorVisible ? 'inspector-hidden' : ''} ${overview ? 'is-overview' : ''} ${reviewMode ? 'is-review' : ''}`}>
+    <AppHeader scene={scene} health={state.health} overview={overview} section={reviewMode ? 'Review desk' : undefined} onHome={() => { setOverview(true); setReviewMode(false) }} onCommand={() => actions.toggle('commandOpen',true)} onIngest={() => actions.toggle('ingestOpen',true)} onPipeline={() => actions.toggle('pipelineOpen',true)}/>
+    <SceneRail scenes={state.scenes} selectedId={state.selectedSceneId} collapsed={railCollapsed} overview={overview} reviewMode={reviewMode} mode={state.mode} onCollapse={() => setRailCollapsed(!railCollapsed)} onSelect={selectScene} onNavigate={navigate} onReview={() => openReview()} onIngest={() => actions.toggle('ingestOpen',true)}/>
     <main className="evidence-workbench" id="main-content">
-      {overview ? <Overview scenes={state.scenes} scene={scene} onSelect={selectScene} onOpen={() => navigate('canvas')} onIngest={() => actions.toggle('ingestOpen',true)} onReview={openReview} onGraph={() => navigate('graph')}/> : <>
+      {overview ? <Overview scenes={state.scenes} scene={scene} onSelect={selectScene} onOpen={() => navigate('canvas')} onIngest={() => actions.toggle('ingestOpen',true)} onReview={openReview} onGraph={() => navigate('graph')}/> : reviewMode ? <ReviewDesk scene={scene} selectedId={state.selectedObservationId} onSelect={actions.selectObservation} onReview={actions.review} onBack={() => { setOverview(true); setReviewMode(false) }} onOpenCanvas={() => { setReviewMode(false); actions.setMode('canvas'); setInspectorVisible(true) }} onOpenHistory={assetId => { actions.selectAsset(assetId); actions.setMode('trace'); setReviewMode(false); setInspectorVisible(false) }}/> : <>
       <WorkbenchToolbar scene={scene} lensId={state.lensId} mode={state.mode} compare={state.compare.enabled} inspectorVisible={inspectorVisible} onHome={() => setOverview(true)} onInspector={() => setInspectorVisible(true)} onLens={actions.setLens} onMode={actions.setMode} onCompare={() => actions.setCompare({enabled:!state.compare.enabled})} onScenario={() => actions.toggle('scenarioOpen',true)}/>
       {state.error && <div className="soft-error"><AlertTriangle size={13}/><span>{state.error}</span><button onClick={actions.refresh}>Refresh scene</button></div>}
       <div className="workbench-body" aria-busy={state.loading}>

@@ -5,8 +5,8 @@ import { IconButton } from '../components/ui'
 import { BrandMark } from './BrandMark'
 import { SkyArt } from './SkyArt'
 
-export function SceneRail({ scenes, selectedId, collapsed, overview, mode, onCollapse, onSelect, onNavigate, onReview, onIngest }: {
-  scenes: SceneSummary[]; selectedId: string; collapsed: boolean; overview: boolean; mode: WorkbenchMode
+export function SceneRail({ scenes, selectedId, collapsed, overview, reviewMode, mode, onCollapse, onSelect, onNavigate, onReview, onIngest }: {
+  scenes: SceneSummary[]; selectedId: string; collapsed: boolean; overview: boolean; reviewMode: boolean; mode: WorkbenchMode
   onCollapse(): void; onSelect(sceneId: string): void; onNavigate(mode: WorkbenchMode | 'overview'): void; onReview(): void; onIngest(): void
 }) {
   const nav = [
@@ -21,8 +21,11 @@ export function SceneRail({ scenes, selectedId, collapsed, overview, mode, onCol
     <button className="brand-home" onClick={() => onNavigate('overview')} aria-label="Scenara home"><BrandMark compact={collapsed}/></button>
     <div className="rail-space-label">YOUR WORKSPACE</div>
     <nav className="rail-nav" aria-label="Workspace">
-      {nav.map(item => <button key={item.value} className={(overview ? item.value === 'overview' : item.value === mode) ? 'active' : ''} title={item.label} onClick={() => onNavigate(item.value)}><item.icon size={19}/><span>{item.label}</span>{(overview ? item.value === 'overview' : item.value === mode) && <i/>}</button>)}
-      <button onClick={onReview} title="Review findings"><ShieldCheck size={19}/><span>Review queue</span>{reviews > 0 && <em>{reviews}</em>}</button>
+      {nav.map(item => {
+        const active = !reviewMode && (overview ? item.value === 'overview' : item.value === mode)
+        return <button key={item.value} className={active ? 'active' : ''} title={item.label} onClick={() => onNavigate(item.value)}><item.icon size={19}/><span>{item.label}</span>{active && <i/>}</button>
+      })}
+      <button className={reviewMode ? 'active' : ''} onClick={onReview} title="Review findings"><ShieldCheck size={19}/><span>Review queue</span>{reviews > 0 && <em>{reviews}</em>}{reviewMode && <i/>}</button>
     </nav>
     <section className="rail-scenes">
       <div className="rail-section-head"><span>YOUR SCENES</span><Layers3 size={14}/></div>
