@@ -4,6 +4,7 @@ import { AlertTriangle, LoaderCircle, RefreshCcw, ServerOff } from 'lucide-react
 import type { Observation, SearchHit, SceneGraphNode } from '../shared/domain'
 import { Button, EmptyState } from './components/ui'
 import { useSceneWorkspace, type WorkbenchMode } from './hooks/useSceneWorkspace'
+import { LandingPage } from './landing/LandingPage'
 import { BrandMark } from './workbench/BrandMark'
 import { Overview } from './workbench/Overview'
 import { AppHeader } from './workbench/AppHeader'
@@ -19,6 +20,7 @@ import { PipelinePanel } from './workbench/PipelinePanel'
 import { IngestDialog } from './workbench/IngestDialog'
 import { ScenarioDialog } from './workbench/ScenarioDialog'
 import { ReviewDesk } from './workbench/ReviewDesk'
+import { AnalysisDialog } from './workbench/AnalysisDialog'
 import './workbench/workbench.css'
 
 export default function App() {
@@ -28,16 +30,26 @@ export default function App() {
   const [overview, setOverview] = useState(true)
   const [reviewMode, setReviewMode] = useState(false)
   const [selectedGraphNodeId, setSelectedGraphNodeId] = useState<string>()
+  const [landing, setLanding] = useState(() => window.location.hash !== '#workspace')
+  const [analysisOpen, setAnalysisOpen] = useState(false)
+
+  useEffect(() => {
+    const syncRoute = () => setLanding(window.location.hash !== '#workspace')
+    addEventListener('hashchange', syncRoute)
+    return () => removeEventListener('hashchange', syncRoute)
+  }, [])
 
   useEffect(() => {
     const navigate = (event: KeyboardEvent) => {
-      if (event.ctrlKey || event.metaKey || event.altKey || state.commandOpen || state.ingestOpen || state.pipelineOpen || state.scenarioOpen) return
+      if (landing || event.ctrlKey || event.metaKey || event.altKey || state.commandOpen || state.ingestOpen || state.pipelineOpen || state.scenarioOpen || analysisOpen) return
       if ((event.target as HTMLElement)?.closest('input, textarea, select, [contenteditable="true"]')) return
       if (['1','2','3','4'].includes(event.key)) { setOverview(false); setReviewMode(false) }
     }
     addEventListener('keydown', navigate)
     return () => removeEventListener('keydown', navigate)
-  }, [state.commandOpen, state.ingestOpen, state.pipelineOpen, state.scenarioOpen])
+  }, [landing, analysisOpen, state.commandOpen, state.ingestOpen, state.pipelineOpen, state.scenarioOpen])
+
+  if (landing) return <LandingPage connected={state.health?.status === 'ok'} onEnter={() => { window.location.hash = 'workspace'; setLanding(false) }}/>
 
   if (state.loading && !state.scene) {
     return <div className="app-loading"><BrandMark/><LoaderCircle className="spin" size={22}/><b>Finding your perspective…</b></div>
@@ -118,7 +130,7 @@ export default function App() {
     <SceneRail scenes={state.scenes} selectedId={state.selectedSceneId} collapsed={railCollapsed} overview={overview} reviewMode={reviewMode} mode={state.mode} onCollapse={() => setRailCollapsed(!railCollapsed)} onSelect={selectScene} onNavigate={navigate} onReview={() => openReview()} onIngest={() => actions.toggle('ingestOpen',true)}/>
     <main className="evidence-workbench" id="main-content">
       {overview ? <Overview scenes={state.scenes} scene={scene} onSelect={selectScene} onOpen={() => navigate('canvas')} onIngest={() => actions.toggle('ingestOpen',true)} onReview={openReview} onGraph={() => navigate('graph')}/> : reviewMode ? <ReviewDesk scene={scene} selectedId={state.selectedObservationId} onSelect={actions.selectObservation} onReview={actions.review} onBack={() => { setOverview(true); setReviewMode(false) }} onOpenCanvas={() => { setReviewMode(false); actions.setMode('canvas'); setInspectorVisible(true) }} onOpenHistory={assetId => { actions.selectAsset(assetId); actions.setMode('trace'); setReviewMode(false); setInspectorVisible(false) }}/> : <>
-      <WorkbenchToolbar scene={scene} lensId={state.lensId} mode={state.mode} compare={state.compare.enabled} inspectorVisible={inspectorVisible} onHome={() => setOverview(true)} onInspector={() => setInspectorVisible(true)} onLens={actions.setLens} onMode={actions.setMode} onCompare={() => actions.setCompare({enabled:!state.compare.enabled})} onScenario={() => actions.toggle('scenarioOpen',true)}/>
+      <WorkbenchToolbar scene={scene} lensId={state.lensId} mode={state.mode} compare={state.compare.enabled} inspectorVisible={inspectorVisible} onHome={() => setOverview(true)} onInspector={() => setInspectorVisible(true)} onLens={actions.setLens} onMode={actions.setMode} onCompare={() => actions.setCompare({enabled:!state.compare.enabled})} onScenario={() => actions.toggle('scenarioOpen',true)} onAnalyze={() => setAnalysisOpen(true)}/>
       {state.error && <div className="soft-error"><AlertTriangle size={13}/><span>{state.error}</span><button onClick={actions.refresh}>Refresh scene</button></div>}
       <div className="workbench-body" aria-busy={state.loading}>
         {state.loading && <div className="workspace-loading"><LoaderCircle className="spin" size={22}/><span>Loading scene…</span></div>}
@@ -136,5 +148,6 @@ export default function App() {
     <PipelinePanel open={state.pipelineOpen} health={state.health} jobs={state.jobs} onClose={() => actions.toggle('pipelineOpen',false)}/>
     <IngestDialog open={state.ingestOpen} scene={scene} onClose={() => actions.toggle('ingestOpen',false)} onComplete={actions.refresh}/>
     <ScenarioDialog open={state.scenarioOpen} scene={scene} onClose={() => actions.toggle('scenarioOpen',false)} onCreated={actions.refresh}/>
+    <AnalysisDialog open={analysisOpen} scene={scene} health={state.health} selectedAssetId={state.selectedAssetId} onClose={() => setAnalysisOpen(false)} onAnalyze={actions.analyze} onPipeline={() => actions.toggle('pipelineOpen',true)}/>
   </div></MotionConfig>
 }

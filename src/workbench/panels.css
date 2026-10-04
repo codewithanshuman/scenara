@@ -71,11 +71,11 @@
 .review-context > svg { flex-shrink: 0; color: #3448C5; margin-top: 2px; }
 .review-context b { font-size: 13px; font-weight: 600; }
 .review-context p { font-size: 12px; line-height: 1.65; color: #23436A; margin: 6px 0 0; }
-.review-note, .correction-form label, .scenario-prompt, .scenario-source label { display: flex; flex-direction: column; gap: 9px; font-size: 12px; font-weight: 550; }
+.review-note, .correction-form label, .scenario-prompt, .scenario-source label, .analysis-source label { display: flex; flex-direction: column; gap: 9px; font-size: 12px; font-weight: 550; }
 .review-note > span { display: flex; justify-content: space-between; }
 .review-note small { color: #23436A; font-size: 11px; font-weight: 400; }
-.evidence-inspector textarea, .evidence-inspector input, .evidence-inspector select, .scenario-dialog textarea, .scenario-dialog select { border: 1px solid #23436A38; border-radius: 9px; color: #1B295D; background: #E3E9EF; padding: 11px 12px; font-family: inherit; font-size: 12px; line-height: 1.6; width: 100%; outline: none; transition: border-color .2s, box-shadow .2s; }
-.evidence-inspector textarea:focus, .evidence-inspector input:focus, .evidence-inspector select:focus, .scenario-dialog textarea:focus, .scenario-dialog select:focus { border-color: #3448C5; box-shadow: 0 0 0 3px #3448C510; }
+.evidence-inspector textarea, .evidence-inspector input, .evidence-inspector select, .scenario-dialog textarea, .scenario-dialog select, .analysis-dialog select { border: 1px solid #23436A38; border-radius: 9px; color: #1B295D; background: #E3E9EF; padding: 11px 12px; font-family: inherit; font-size: 12px; line-height: 1.6; width: 100%; outline: none; transition: border-color .2s, box-shadow .2s; }
+.evidence-inspector textarea:focus, .evidence-inspector input:focus, .evidence-inspector select:focus, .scenario-dialog textarea:focus, .scenario-dialog select:focus, .analysis-dialog select:focus { border-color: #3448C5; box-shadow: 0 0 0 3px #3448C510; }
 .evidence-inspector textarea::placeholder { color: #23436A99; }
 .evidence-inspector textarea { min-height: 100px; resize: vertical; }
 .correction-form { margin: 0 0 20px; border: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
@@ -201,6 +201,61 @@
 .scenario-prompt textarea { min-height: 100px; resize: vertical; }
 .scenario-dialog > .dialog-error { margin: 0 30px 20px; }
 
+.analysis-dialog { width:min(1030px,calc(100vw - 32px)); }
+.analysis-layout { display:grid; grid-template-columns:310px minmax(0,1fr); gap:28px; padding:26px 30px 28px; }
+.analysis-source { border-right:1px solid #23436A24; padding-right:28px; }
+.analysis-preview { position:relative; display:grid; place-items:center; aspect-ratio:1.26; overflow:hidden; border:1px solid #23436A24; border-radius:13px; background:#23436A0C; }
+.analysis-preview > img, .analysis-preview > video { width:100%; height:100%; display:block; object-fit:cover; }
+.analysis-preview > span:not(.ui-badge) { display:flex; flex-direction:column; align-items:center; gap:9px; color:#3448C5; text-transform:capitalize; }
+.analysis-preview > .ui-badge { position:absolute; left:11px; top:11px; background:#E3E9EF; }
+.analysis-source > label { margin-top:18px; }
+.analysis-source dl { margin:20px 0 0; border-top:1px solid #23436A24; }
+.analysis-source dl > div { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:11px 0; border-bottom:1px solid #23436A1A; font-size:10px; }
+.analysis-source dt { color:#23436A; }
+.analysis-source dd { margin:0; font:10px var(--mono); color:#3448C5; text-align:right; }
+.analysis-config { display:grid; gap:24px; min-width:0; }
+.analysis-config fieldset { border:0; margin:0; padding:0; }
+.analysis-config legend { display:flex; align-items:center; gap:8px; margin-bottom:11px; color:#1B295D; font-size:12px; font-weight:600; }
+.analysis-config legend svg { color:#3448C5; }
+.analysis-choice-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
+.analysis-choice-grid.lens-grid { grid-template-columns:repeat(5,minmax(0,1fr)); }
+.analysis-choice-grid button { position:relative; min-height:78px; padding:12px; border:1px solid #23436A2C; border-radius:9px; background:transparent; color:#1B295D; text-align:left; }
+.analysis-choice-grid button:hover, .analysis-choice-grid button.selected { border-color:#3448C5; background:#3448C509; }
+.analysis-choice-grid button > span { display:grid; gap:6px; }
+.analysis-choice-grid b { font-size:11px; font-weight:600; }
+.analysis-choice-grid small { color:#23436A; font-size:9px; line-height:1.4; }
+.analysis-choice-grid button > svg { position:absolute; top:8px; right:8px; color:#3448C5; }
+.analysis-temporal { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.analysis-temporal button { display:flex; align-items:center; gap:11px; min-height:60px; padding:11px 13px; border:1px solid #23436A2C; border-radius:9px; background:transparent; text-align:left; }
+.analysis-temporal button:hover, .analysis-temporal button.selected { border-color:#3448C5; background:#3448C509; }
+.analysis-temporal button > svg { color:#3448C5; }
+.analysis-temporal b, .analysis-temporal small { display:block; }
+.analysis-temporal b { font-size:11px; font-weight:600; }
+.analysis-temporal small { margin-top:4px; color:#23436A; font-size:9px; }
+.analysis-force { display:flex; align-items:flex-start; gap:11px; padding:13px; border:1px dashed #3448C547; border-radius:9px; background:#3448C506; cursor:pointer; }
+.analysis-force input { margin:2px 0 0; }
+.analysis-force > span { display:grid; gap:5px; }
+.analysis-force b { display:flex; align-items:center; gap:7px; font-size:11px; }
+.analysis-force b svg { color:#3448C5; }
+.analysis-force small { color:#23436A; font-size:9px; }
+.analysis-dialog > .dialog-error { margin:0 30px 20px; }
+.analysis-footer { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:20px 30px; border-top:1px solid #23436A24; }
+.analysis-footer > span { display:flex; align-items:center; gap:8px; color:#23436A; font-size:10px; }
+.analysis-footer > span svg { color:#3448C5; }
+.analysis-footer > div { display:flex; gap:8px; }
+.analysis-result { display:grid; grid-template-columns:58px 1fr; gap:20px; padding:32px 30px 38px; }
+.analysis-result-icon { width:58px; height:58px; display:grid; place-items:center; border:1px solid #3448C54D; border-radius:16px; color:#3448C5; background:#3448C509; }
+.analysis-result h3 { margin:10px 0 7px; font-size:21px; font-weight:550; text-transform:capitalize; }
+.analysis-result p { margin:0 0 18px; color:#23436A; font-size:12px; line-height:1.6; }
+.analysis-result .ui-progress { max-width:500px; }
+.analysis-result small { display:block; margin-top:8px; color:#23436A; font:9px var(--mono); }
+@media (max-width: 1050px) and (min-width: 701px) {
+  .analysis-layout { grid-template-columns:250px minmax(0,1fr); gap:20px; padding-inline:22px; }
+  .analysis-source { padding-right:20px; }
+  .analysis-choice-grid.lens-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .analysis-choice-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+
 @keyframes panel-arrive { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
 @media (max-width: 1150px) { .evidence-inspector { flex-basis: 302px; width: 302px; min-width: 280px; } .inspector-scroll { padding-left: 18px; padding-right: 18px; } }
 @media (max-width: 700px) {
@@ -235,5 +290,13 @@
   .scenario-body { grid-template-columns: 1fr; padding: 0 18px 24px; gap: 24px; }
   .scenario-source-preview { aspect-ratio: 2; }
   .scenario-dialog > .dialog-error { margin-left: 18px; margin-right: 18px; }
+  .analysis-layout { grid-template-columns:1fr; padding:20px 18px; }
+  .analysis-source { border-right:0; border-bottom:1px solid #23436A24; padding:0 0 22px; }
+  .analysis-preview { aspect-ratio:2; }
+  .analysis-choice-grid, .analysis-choice-grid.lens-grid { grid-template-columns:1fr 1fr; }
+  .analysis-temporal { grid-template-columns:1fr; }
+  .analysis-footer { padding:17px 18px; flex-wrap:wrap; }
+  .analysis-footer > div { margin-left:auto; }
+  .analysis-dialog > .dialog-error { margin-left:18px; margin-right:18px; }
 }
 @media (prefers-reduced-motion: reduce) { .evidence-inspector { animation: none; } .scenario-options > button, .ingest-drop { transition: none; } }

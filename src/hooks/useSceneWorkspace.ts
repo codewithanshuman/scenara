@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import type { LensId, Observation, PipelineJob, SceneGraph, SearchResult } from '../../shared/domain'
-import { api, type HealthStatus, type ReviewInput, type SceneSummary, type SceneWorkspace } from '../api/client'
+import { api, type AnalyzeAssetInput, type HealthStatus, type ReviewInput, type SceneSummary, type SceneWorkspace } from '../api/client'
 
 export type WorkbenchMode = 'canvas' | 'graph' | 'timeline' | 'trace'
 
@@ -204,8 +204,8 @@ export function useSceneWorkspace() {
       await loadScene(selectedSceneId.current)
       return result
     },
-    async analyze(assetId: string, lensId: LensId, force = false) {
-      const result = await api.analyze({ assetId, lensId, force })
+    async analyze(input: AnalyzeAssetInput) {
+      const result = await api.analyze(input)
       dispatch({ type: 'SET_JOBS', jobs: [result.job, ...state.jobs.filter(item => item.id !== result.job.id)] })
       return result
     },

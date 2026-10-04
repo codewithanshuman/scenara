@@ -83,7 +83,7 @@ export class ScenaraApplication {
   listScenes(options: { status?: string; workspaceId?: string; limit?: number } = {}) {
     const snapshot = this.database.snapshot()
     return snapshot.scenes
-      .filter(scene => !options.status || scene.status === options.status)
+      .filter(scene => !options.status || this.sceneRuntimeStatus(scene, snapshot) === options.status)
       .filter(scene => !options.workspaceId || scene.workspaceId === options.workspaceId)
       .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))
       .slice(0, options.limit ?? 100)
@@ -96,6 +96,7 @@ export class ScenaraApplication {
     if (!scene) throw new NotFoundError('Scene', sceneId)
     return {
       ...scene,
+      status: this.sceneRuntimeStatus(scene, snapshot),
       assets: snapshot.assets.filter(item => item.sceneId === sceneId),
       entities: snapshot.entities.filter(item => item.sceneId === sceneId),
       observations: snapshot.observations.filter(item => item.sceneId === sceneId),
@@ -535,6 +536,7 @@ export class ScenaraApplication {
     const changes = snapshot.changes.filter(item => item.sceneId === scene.id)
     return {
       ...scene,
+      status: this.sceneRuntimeStatus(scene, snapshot),
       assetCount: assets.length,
       entityCount: scene.entityIds.length,
       observationCount: observations.length,
@@ -542,6 +544,18 @@ export class ScenaraApplication {
       reviewCount: observations.filter(item => item.requiresReview && item.state !== 'dismissed').length,
       coverUrl: assets.find(item => item.id === scene.coverAssetId)?.cloudinary?.secureUrl ?? assets.find(item => item.id === scene.coverAssetId)?.localUrl,
     }
+  }
+
+  private sceneRuntimeStatus(scene: Scene, snapshot: ReturnType<DatabaseStore['snapshot']>): Scene['status'] {
+    if (scene.status === 'archived') return 'archived'
+    const activeJob = snapshot.jobs.some(job => job.sceneId === scene.id && (job.status === 'queued' || job.status === 'running'))
+    if (activeJob) return 'processing'
+    const reviewRequired = snapshot.observations.some(observation =>
+      observation.sceneId === scene.id && observation.requiresReview && observation.state !== 'dismissed',
+    )
+    if (reviewRequired) return 'review'
+    if (snapshot.assets.some(asset => asset.sceneId === scene.id)) return 'ready'
+    return 'draft'
   }
 
   private uniqueSceneSlug(title: string, scenes: Scene[]): string {
