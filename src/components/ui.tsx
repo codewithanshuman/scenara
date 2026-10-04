@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from 'react'
+import { useEffect, useRef, type ButtonHTMLAttributes, type HTMLAttributes, type ReactNode } from 'react'
 import { LoaderCircle, X } from 'lucide-react'
 
 export type Tone = 'neutral' | 'blue' | 'cyan' | 'violet' | 'green' | 'amber' | 'red'
@@ -13,7 +13,7 @@ export function IconButton({ label, className = '', children, ...props }: Button
 
 export function Button({ variant = 'secondary', size = 'md', className = '', children, loading, ...props }:
   ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'accent'; size?: 'sm' | 'md' | 'lg'; loading?: boolean }) {
-  return <button type="button" className={`ui-button variant-${variant} size-${size} ${className}`} disabled={loading || props.disabled} {...props}>
+  return <button type="button" className={`ui-button variant-${variant} size-${size} ${className}`} {...props} disabled={loading || props.disabled} aria-busy={loading || undefined}>
     {loading && <LoaderCircle size={14} className="spin"/>}{children}
   </button>
 }
@@ -47,8 +47,30 @@ export function Progress({ value, tone = 'blue', label }: { value: number; tone?
 }
 
 export function Dialog({ children, onClose, className = '', label }: { children: ReactNode; onClose(): void; className?: string; label: string }) {
+  const panel = useRef<HTMLElement>(null)
+  const close = useRef(onClose)
+  close.current = onClose
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null
+    const element = panel.current
+    if (!element) return
+    const focusable = () => Array.from(element.querySelectorAll<HTMLElement>('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex="0"]')).filter(item => item.getClientRects().length > 0)
+    const first = focusable().find(item => item.hasAttribute('autofocus')) ?? focusable()[0] ?? element
+    first.focus()
+    const keyboard = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.stopPropagation(); close.current(); return }
+      if (event.key !== 'Tab') return
+      const items = focusable()
+      if (!items.length) { event.preventDefault(); element.focus(); return }
+      const current = items.indexOf(document.activeElement as HTMLElement)
+      if (event.shiftKey && current <= 0) { event.preventDefault(); items.at(-1)?.focus() }
+      else if (!event.shiftKey && (current === items.length - 1 || current === -1)) { event.preventDefault(); items[0].focus() }
+    }
+    element.addEventListener('keydown', keyboard)
+    return () => { element.removeEventListener('keydown', keyboard); previous?.focus() }
+  }, [])
   return <div className="ui-dialog-backdrop" onMouseDown={event => event.target === event.currentTarget && onClose()}>
-    <section className={`ui-dialog ${className}`} role="dialog" aria-modal="true" aria-label={label}>
+    <section ref={panel} tabIndex={-1} className={`ui-dialog ${className}`} role="dialog" aria-modal="true" aria-label={label}>
       {children}
     </section>
   </div>

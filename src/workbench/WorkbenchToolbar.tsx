@@ -1,42 +1,17 @@
-import { Activity, CalendarRange, CheckCircle2, CircleDot, GitBranch, Image, Layers3, ListTree, MapPin, Network, ScanLine, ShieldAlert, SlidersHorizontal, Sparkles, SplitSquareVertical } from 'lucide-react'
+import { ArrowLeft, GitBranch, MapPin, Network, PanelRightOpen, ScanLine, SlidersHorizontal, Sparkles, SplitSquareVertical, Waves } from 'lucide-react'
 import type { LensId } from '../../shared/domain'
 import type { SceneWorkspace } from '../api/client'
-import { Badge, Button, Segmented } from '../components/ui'
-import { formatDateTime } from '../utils/format'
+import { Badge, Button, IconButton, Segmented } from '../components/ui'
 import type { WorkbenchMode } from '../hooks/useSceneWorkspace'
 
-const lensOptions: Array<{ value: LensId; label: string }> = [
-  { value: 'general', label: 'General' },
-  { value: 'safety', label: 'Safety' },
-  { value: 'accessibility', label: 'Access' },
-  { value: 'environment', label: 'Environment' },
-]
-
-export function WorkbenchToolbar({ scene, lensId, mode, compare, onLens, onMode, onCompare, onScenario }: {
-  scene: SceneWorkspace
-  lensId: LensId
-  mode: WorkbenchMode
-  compare: boolean
-  onLens(value: LensId): void
-  onMode(value: WorkbenchMode): void
-  onCompare(): void
-  onScenario(): void
+export function WorkbenchToolbar({ scene, lensId, mode, compare, inspectorVisible, onHome, onInspector, onLens, onMode, onCompare, onScenario }: {
+  scene: SceneWorkspace; lensId: LensId; mode: WorkbenchMode; compare: boolean; inspectorVisible: boolean
+  onHome(): void; onInspector(): void; onLens(value: LensId): void; onMode(value: WorkbenchMode): void; onCompare(): void; onScenario(): void
 }) {
   return <div className="workbench-toolbar">
-    <div className="scene-identity">
-      <div className="scene-kicker"><span>SCENE {String(scene.sequence).padStart(3, '0')}</span><i/><span>{formatDateTime(scene.captureEnd).toUpperCase()}</span></div>
-      <div className="scene-title-row"><h1>{scene.title}</h1><Badge tone={scene.status === 'review' ? 'amber' : 'green'}><CircleDot size={8}/>{scene.status}</Badge></div>
-      <div className="scene-subtitle"><span><MapPin size={12}/>{scene.locationLabel}</span><span><CalendarRange size={12}/>{formatDateTime(scene.captureStart, { month: 'short', day: '2-digit' })} → {formatDateTime(scene.captureEnd, { month: 'short', day: '2-digit' })}</span><span><CheckCircle2 size={12}/>Originals preserved</span></div>
-    </div>
-    <div className="workbench-controls">
-      <label className="lens-switch"><small>Analysis lens</small><Segmented value={lensId} options={lensOptions} onChange={onLens} label="Analysis lens"/></label>
-      <div className="workbench-mode-switch"><small>Workspace mode</small><Segmented value={mode} onChange={onMode} label="Workspace mode" options={[
-        { value: 'canvas', label: 'Canvas', icon: <ScanLine size={13}/> },
-        { value: 'graph', label: 'Graph', icon: <Network size={13}/> },
-        { value: 'timeline', label: 'Timeline', icon: <Activity size={13}/> },
-        { value: 'trace', label: 'Trace', icon: <GitBranch size={13}/> },
-      ]}/></div>
-      <div className="toolbar-buttons"><Button variant={compare ? 'accent' : 'secondary'} size="sm" onClick={onCompare}><SplitSquareVertical size={14}/>{compare ? 'Exit compare' : 'Compare'}</Button><Button variant="accent" size="sm" onClick={onScenario}><Sparkles size={14}/>Scenario</Button></div>
-    </div>
+    <div className="scene-heading"><div className="scene-identity"><button className="back-link" onClick={onHome}><ArrowLeft size={14}/>All scenes</button><div className="scene-title-row"><h1>{scene.title}</h1><Badge tone="blue">{scene.reviewCount ? scene.reviewCount + ' to review' : 'Up to date'}</Badge></div><span className="scene-location"><MapPin size={13}/>{scene.locationLabel}</span></div><Button variant="primary" onClick={onScenario}><Sparkles size={16}/>Explore a scenario</Button></div>
+    <div className="workbench-controls"><Segmented value={mode} onChange={onMode} label="Scene view" options={[
+      {value:'canvas',label:'Canvas',icon:<ScanLine size={16}/>}, {value:'graph',label:'Graph',icon:<Network size={16}/>}, {value:'timeline',label:'Timeline',icon:<Waves size={16}/>}, {value:'trace',label:'History',icon:<GitBranch size={16}/>},
+    ]}/><div className="toolbar-buttons"><label className="lens-select"><SlidersHorizontal size={15}/><select aria-label="Analysis lens" value={lensId} onChange={event => onLens(event.target.value as LensId)}><option value="general">All findings</option><option value="safety">Safety</option><option value="accessibility">Accessibility</option><option value="environment">Environment</option></select></label>{mode === 'canvas' && <Button variant={compare ? 'accent' : 'secondary'} onClick={onCompare}><SplitSquareVertical size={15}/>{compare ? 'Close compare' : 'Compare'}</Button>}{!inspectorVisible && <IconButton label="Show evidence inspector" onClick={onInspector}><PanelRightOpen size={18}/></IconButton>}</div></div>
   </div>
 }

@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react'
-import { AlertTriangle, ArrowRight, Braces, Check, CheckCircle2, ChevronDown, ChevronRight, CircleDot, Clock3, FileImage, Film, Fingerprint, Flag, Focus, GitBranch, Image, Info, Layers3, MapPin, MessageSquareText, MoreHorizontal, PencilLine, Play, RotateCcw, ScanLine, ShieldCheck, Sparkles, Trash2, UserCheck, Video, X } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { AlertCircle, ArrowRight, Check, ChevronRight, Clock3, FileImage, Fingerprint, Focus, LoaderCircle, PencilLine, Play, ScanLine, ShieldCheck, X } from 'lucide-react'
 import type { Observation } from '../../shared/domain'
-import type { ReviewInput, SceneWorkspace } from '../api/client'
-import { Badge, Button, IconButton, Meter, Progress, Segmented } from '../components/ui'
+import { api, type ProvenanceResponse, type ReviewInput, type SceneWorkspace } from '../api/client'
+import { Badge, Button, IconButton, Progress, Segmented } from '../components/ui'
 import { confidence, formatDateTime, formatDuration, titleCase } from '../utils/format'
+import './panels.css'
 
 export function EvidenceInspector({ scene, observation, tab, onTab, onReview, onClose }: {
   scene: SceneWorkspace
@@ -15,42 +16,77 @@ export function EvidenceInspector({ scene, observation, tab, onTab, onReview, on
 }) {
   const [rationale, setRationale] = useState('')
   const [working, setWorking] = useState<string>()
+  const [error, setError] = useState<string>()
+  const [notice, setNotice] = useState<string>()
   const [editMode, setEditMode] = useState(false)
-  const evidence = useMemo(() => observation?.evidence.map(item => ({ ...item, asset: scene.assets.find(asset => asset.id === item.assetId), transcript: item.transcriptSegmentId ? scene.transcripts.flatMap(item => item.segments).find(segment => segment.id === item.transcriptSegmentId) : undefined })) ?? [], [observation,scene])
-  if (!observation) return <aside className="evidence-inspector empty"><Focus size={24}/><h3>Select graph evidence</h3><p>Choose an anchor, entity, or relationship to inspect its supporting media and review state.</p></aside>
+  const [correction, setCorrection] = useState({ label: '', description: '', condition: '', severity: 'none' as NonNullable<Observation['severity']> })
+  const [sourceIndex, setSourceIndex] = useState(0)
+  const [provenance, setProvenance] = useState<ProvenanceResponse>()
+  const [provenanceOpen, setProvenanceOpen] = useState(false)
+  const [provenanceBusy, setProvenanceBusy] = useState(false)
+  const evidence = useMemo(() => observation?.evidence.map(item => ({ ...item, asset: scene.assets.find(asset => asset.id === item.assetId), transcript: item.transcriptSegmentId ? scene.transcripts.flatMap(transcript => transcript.segments).find(segment => segment.id === item.transcriptSegmentId) : undefined })) ?? [], [observation, scene])
 
-  const stateTone = observation.state === 'verified' ? 'green' : observation.state === 'dismissed' ? 'red' : observation.requiresReview ? 'amber' : 'blue'
+  useEffect(() => {
+    setRationale(''); setError(undefined); setNotice(undefined); setEditMode(false); setSourceIndex(0); setProvenance(undefined); setProvenanceOpen(false)
+    if (observation) setCorrection({ label: observation.label, description: observation.description, condition: observation.condition ?? '', severity: observation.severity ?? 'none' })
+  }, [observation?.id])
+
+  if (!observation) return <aside className="evidence-inspector empty"><Focus size={28}/><h3>A closer look</h3><p>Select an observation to explore its evidence.</p><Button size="sm" variant="ghost" onClick={onClose}>Close inspector</Button></aside>
+
+  const current = evidence[sourceIndex] ?? evidence[0]
+  const source = current?.asset
+  const sourceUrl = source?.cloudinary?.secureUrl ?? source?.localUrl
+  const mediaUrl = source?.kind === 'video' && /\.(png|jpe?g|webp|gif)(?:$|\?)/i.test(sourceUrl ?? '') ? undefined : sourceUrl
+  const previewUrl = current?.cropUrl ?? source?.posterUrl ?? (source?.kind === 'image' ? mediaUrl : undefined)
+  const stateLabel = observation.state === 'ai_observation' ? 'AI observation' : titleCase(observation.state)
+
   async function decide(decision: ReviewInput['decision']) {
-    setWorking(decision)
-    try { await onReview(observation!.id,{ decision, expectedVersion: observation!.version, ...(rationale ? { rationale } : {}) }); setRationale('') }
+    if (!observation || working) return
+    if (decision === 'corrected' && (!correction.label.trim() || !correction.description.trim())) { setError('Add a title and description before saving.'); return }
+    setWorking(decision); setError(undefined); setNotice(undefined)
+    try {
+      await onReview(observation.id, { decision, expectedVersion: observation.version, ...(rationale.trim() ? { rationale: rationale.trim() } : {}), ...(decision === 'corrected' ? { correction: { ...correction, label: correction.label.trim(), description: correction.description.trim(), condition: correction.condition.trim() } } : {}) })
+      setRationale(''); setEditMode(false); setNotice(decision === 'corrected' ? 'Correction saved.' : decision === 'verified' ? 'Observation verified.' : decision === 'dismissed' ? 'Observation dismissed.' : 'Review deferred.')
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Review could not be saved. Try again.') }
     finally { setWorking(undefined) }
   }
 
-  return <aside className="evidence-inspector">
-    <header className="inspector-top"><span>Evidence inspector</span><div><IconButton label="More options"><MoreHorizontal size={15}/></IconButton><IconButton label="Close inspector" onClick={onClose}><X size={15}/></IconButton></div></header>
-    <div className="inspector-tabs"><Segmented value={tab} onChange={onTab} label="Inspector section" options={[{value:'evidence',label:'Evidence',count:evidence.length},{value:'review',label:'Review',count:observation.requiresReview?1:0},{value:'data',label:'Data'}]}/></div>
-    <div className="inspector-scroll">
-      <section className="finding-title"><div className={`finding-symbol tone-${stateTone}`}><ScanLine size={18}/></div><div><small>{titleCase(observation.lensId)} lens · {titleCase(observation.state)}</small><h2>{observation.label}</h2><div><Badge tone={stateTone}>{observation.requiresReview ? <AlertTriangle size={9}/> : <ShieldCheck size={9}/>} {titleCase(observation.state)}</Badge>{observation.severity && <Badge tone={observation.severity === 'high' || observation.severity === 'critical' ? 'red' : observation.severity === 'medium' ? 'amber' : 'neutral'}>{observation.severity}</Badge>}</div></div></section>
-      <section className="confidence-card"><div><span><small>{observation.policy ? 'EVIDENCE-ADJUSTED CONFIDENCE' : 'MODEL CONFIDENCE'}</small><b>{confidence(observation.confidence)}</b></span><Meter value={observation.confidence} tone={observation.confidence<.8?'amber':'cyan'} size={48}>{Math.round(observation.confidence*100)}</Meter></div><Progress value={observation.confidence*100} tone={observation.confidence<.8?'amber':'cyan'}/><footer><span>{observation.sourceModel}</span><span>v{observation.version}</span></footer></section>
+  async function inspectProvenance() {
+    if (!source) return
+    if (provenanceOpen) { setProvenanceOpen(false); return }
+    setProvenanceBusy(true); setError(undefined)
+    try { setProvenance(await api.provenance(source.id)); setProvenanceOpen(true) }
+    catch (cause) { setError(cause instanceof Error ? cause.message : 'Source history could not be loaded.') }
+    finally { setProvenanceBusy(false) }
+  }
 
-      {observation.policy && <section className="policy-assessment">
-        <header><span><ShieldCheck size={13}/>Evidence policy</span><Badge tone={observation.policy.decision==='accept'?'green':observation.policy.decision==='review'?'amber':'red'}>{observation.policy.decision}</Badge></header>
-        <div className="policy-score"><span><small>MODEL</small><b>{confidence(observation.policy.modelConfidence)}</b></span><ArrowRight size={13}/><span><small>ADJUSTED</small><b>{confidence(observation.policy.adjustedConfidence)}</b></span><i>{observation.policy.corroboratingSources} source{observation.policy.corroboratingSources===1?'':'s'}</i></div>
-        <code>{observation.policy.ruleId}</code>
-        {(observation.policy.reviewReasons.length>0||observation.policy.appliedAdjustments.length>0)&&<ul>{observation.policy.reviewReasons.map(reason=><li key={reason}><AlertTriangle size={10}/>{reason}</li>)}{observation.policy.appliedAdjustments.map(adjustment=><li key={`${adjustment.kind}-${adjustment.value}`}><GitBranch size={10}/>{adjustment.explanation}</li>)}</ul>}
-      </section>}
+  return <aside className="evidence-inspector">
+    <header className="inspector-top"><span><ScanLine size={16}/>Observation</span><IconButton label="Close inspector" onClick={onClose}><X size={16}/></IconButton></header>
+    <div className="inspector-tabs"><Segmented value={tab} onChange={onTab} label="Inspector section" options={[{ value: 'evidence', label: 'Evidence', count: evidence.length }, { value: 'review', label: 'Review' }, { value: 'data', label: 'Details' }]}/></div>
+    <div className="inspector-scroll">
+      <section className="finding-title"><div className="finding-kicker"><span>{titleCase(observation.lensId)}</span><span>#{String(scene.observations.findIndex(item => item.id === observation.id) + 1).padStart(2, '0')}</span></div><h2>{observation.label}</h2><div className="finding-badges"><Badge tone="blue">{observation.state === 'verified' ? <ShieldCheck size={11}/> : <ScanLine size={11}/>} {stateLabel}</Badge>{observation.severity && observation.severity !== 'none' && <Badge>{titleCase(observation.severity)} priority</Badge>}</div></section>
+      <section className="confidence-card"><div><span>Confidence</span><b>{confidence(observation.confidence)}</b></div><Progress value={observation.confidence * 100} label="Observation confidence"/><footer><span>{observation.policy ? `${observation.policy.corroboratingSources} supporting source${observation.policy.corroboratingSources === 1 ? '' : 's'}` : `${evidence.length} linked source${evidence.length === 1 ? '' : 's'}`}</span><span>Version {observation.version}</span></footer></section>
+      {error && <p className="panel-message is-error" role="alert"><AlertCircle size={15}/>{error}</p>}
+      {notice && <p className="panel-message" role="status"><Check size={15}/>{notice}</p>}
 
       {tab === 'evidence' && <>
-        <section className="finding-description"><header><span>Observation</span><IconButton label="Edit observation" onClick={() => setEditMode(!editMode)}><PencilLine size={13}/></IconButton></header>{editMode ? <textarea defaultValue={observation.description}/> : <p>{observation.description}</p>}<dl><div><dt>Condition</dt><dd>{observation.condition ?? 'Not specified'}</dd></div><div><dt>Captured</dt><dd>{formatDateTime(observation.capturedAt)}</dd></div></dl></section>
-        <section className="supporting-evidence"><header><span>Supporting evidence</span><small>{evidence.length} linked sources</small></header>{evidence.map((item,index) => <button key={`${item.assetId}-${index}`}>
-          <span className="evidence-preview">{item.asset?.posterUrl || item.asset?.localUrl ? <img src={item.asset.posterUrl ?? item.asset.localUrl} alt=""/> : <FileImage size={16}/>} {item.frameTimeSeconds !== undefined && <i><Play size={9}/>{formatDuration(item.frameTimeSeconds)}</i>}</span><span><b>{item.asset?.sourceFilename ?? item.assetId}</b><small>{titleCase(item.asset?.kind ?? 'media')} · {item.note ?? (item.region ? 'Exact evidence region' : 'Linked source')}</small></span><Badge tone="blue">{index === 0 ? 'Primary' : 'Support'}</Badge><ChevronRight size={13}/>
-        </button>)}</section>
-        <button className="provenance-link"><span className="link-icon"><Fingerprint size={16}/></span><span><b>Open provenance chain</b><small>Original → analysis → review → derived output</small></span><ArrowRight size={14}/></button>
+        <section className="finding-description"><header><span>What was observed</span><IconButton label="Correct observation" onClick={() => { setEditMode(true); onTab('review') }}><PencilLine size={14}/></IconButton></header><p>{observation.description}</p><dl><div><dt>Condition</dt><dd>{observation.condition ?? 'Unspecified'}</dd></div><div><dt>Captured</dt><dd>{formatDateTime(observation.capturedAt)}</dd></div></dl></section>
+        {current && <section className="inspector-source"><div className="inspector-source-media">{source?.kind === 'video' && mediaUrl ? <video key={mediaUrl} src={`${mediaUrl}${current.frameTimeSeconds !== undefined ? `#t=${current.frameTimeSeconds}` : ''}`} poster={source.posterUrl} controls preload="metadata"/> : source?.kind === 'audio' && mediaUrl ? <audio src={mediaUrl} controls preload="metadata"/> : previewUrl ? <img src={previewUrl} alt={current.note ?? `Source for ${observation.label}`}/> : <div className="source-placeholder"><FileImage size={28}/><span>Preview unavailable</span></div>}<span className="source-origin">{titleCase(source?.origin ?? 'original')}</span></div>{current.transcript && <blockquote>“{current.transcript.text}”</blockquote>}<footer><span>{source?.sourceFilename ?? 'Source media'}</span>{mediaUrl && <a href={mediaUrl} target="_blank" rel="noreferrer" aria-label="Open original source"><ArrowRight size={15}/></a>}</footer></section>}
+        <section className="supporting-evidence"><header><span>Linked sources</span><small>{evidence.length}</small></header>{evidence.map((item, index) => {
+          const thumbnail = item.cropUrl ?? item.asset?.posterUrl ?? (item.asset?.kind === 'image' ? item.asset?.cloudinary?.secureUrl ?? item.asset?.localUrl : undefined)
+          return <button type="button" key={`${item.assetId}-${index}`} className={sourceIndex === index ? 'selected' : ''} aria-pressed={sourceIndex === index} onClick={() => { setSourceIndex(index); setProvenanceOpen(false); setProvenance(undefined) }}><span className="evidence-preview">{thumbnail ? <img src={thumbnail} alt=""/> : <FileImage size={18}/>}</span><span><b>{item.asset?.sourceFilename ?? 'Source media'}</b><small>{item.frameTimeSeconds !== undefined ? <><Play size={10}/>{formatDuration(item.frameTimeSeconds)} · </> : null}{item.note ?? titleCase(item.asset?.kind ?? 'media')}</small></span><ChevronRight size={14}/></button>
+        })}</section>
+        {source && <><button type="button" className="provenance-link" aria-expanded={provenanceOpen} onClick={inspectProvenance} disabled={provenanceBusy}><Fingerprint size={19}/><span><b>Source history</b><small>Capture, analysis & review</small></span>{provenanceBusy ? <LoaderCircle size={15} className="spin"/> : <ChevronRight size={15} className={provenanceOpen ? 'rotated' : ''}/>}</button>{provenanceOpen && provenance && <section className="source-history"><header><span>{provenance.verification.valid ? 'History verified' : 'History needs attention'}</span><Badge>{provenance.events.length} events</Badge></header><ol>{provenance.events.map(event => <li key={event.id}><span className="history-dot"/><div><b>{titleCase(event.action)}</b><small>{formatDateTime(event.occurredAt)}</small></div></li>)}</ol></section>}</>}
       </>}
 
-      {tab === 'review' && <section className="review-workspace"><div className="review-context"><UserCheck size={17}/><span><b>Human verification required</b><p>Confirm whether the observation accurately describes what the linked source media visibly supports.</p></span></div><label><span>Reviewer note <small>Optional</small></span><textarea value={rationale} onChange={event => setRationale(event.target.value)} placeholder="Record why this finding is accepted, corrected, or dismissed…"/></label><div className="review-actions"><Button variant="primary" loading={working==='verified'} onClick={() => decide('verified')}><Check size={14}/>Verify finding</Button><Button variant="secondary" loading={working==='corrected'} onClick={() => decide('corrected')}><PencilLine size={14}/>Correct</Button><Button variant="danger" loading={working==='dismissed'} onClick={() => decide('dismissed')}><X size={14}/>Dismiss</Button><Button variant="ghost" loading={working==='deferred'} onClick={() => decide('deferred')}><Clock3 size={14}/>Defer</Button></div><div className="review-history"><header><span>Review history</span><small>Immutable audit trail</small></header><div><span className="history-node"><CircleDot size={11}/></span><span><b>AI observation created</b><small>{formatDateTime(observation.createdAt)} · {observation.sourceModel}</small></span></div>{observation.reviewedAt && <div><span className="history-node verified"><Check size={11}/></span><span><b>{titleCase(observation.state)} by reviewer</b><small>{formatDateTime(observation.reviewedAt)} · {observation.reviewedBy}</small></span></div>}</div></section>}
+      {tab === 'review' && <section className="review-workspace"><div className="review-context"><ShieldCheck size={21}/><div><b>{observation.requiresReview ? 'Ready for your review' : 'Review this observation'}</b><p>Check the sources, then record your decision.</p></div></div>
+        {editMode && <fieldset className="correction-form"><legend>Correct observation</legend><label><span>Title</span><input value={correction.label} maxLength={160} onChange={event => setCorrection(value => ({ ...value, label: event.target.value }))}/></label><label><span>Description</span><textarea value={correction.description} maxLength={4000} onChange={event => setCorrection(value => ({ ...value, description: event.target.value }))}/></label><label><span>Condition</span><input value={correction.condition} maxLength={160} onChange={event => setCorrection(value => ({ ...value, condition: event.target.value }))}/></label><label><span>Priority</span><select value={correction.severity} onChange={event => setCorrection(value => ({ ...value, severity: event.target.value as typeof value.severity }))}>{['none', 'low', 'medium', 'high', 'critical'].map(value => <option key={value} value={value}>{titleCase(value)}</option>)}</select></label></fieldset>}
+        <label className="review-note"><span>Note <small>Optional</small></span><textarea value={rationale} maxLength={4000} onChange={event => setRationale(event.target.value)} placeholder="What informed your decision?"/></label>
+        {editMode ? <div className="review-actions"><Button variant="primary" disabled={!!working} loading={working === 'corrected'} onClick={() => decide('corrected')}><Check size={14}/>Save correction</Button><Button disabled={!!working} onClick={() => setEditMode(false)}>Cancel edit</Button></div> : <div className="review-actions"><Button variant="primary" disabled={!!working} loading={working === 'verified'} onClick={() => decide('verified')}><Check size={15}/>Verify</Button><Button disabled={!!working} onClick={() => setEditMode(true)}><PencilLine size={14}/>Correct</Button><Button variant="ghost" disabled={!!working} loading={working === 'dismissed'} onClick={() => decide('dismissed')}><X size={14}/>Dismiss</Button><Button variant="ghost" disabled={!!working} loading={working === 'deferred'} onClick={() => decide('deferred')}><Clock3 size={14}/>Defer</Button></div>}
+        <div className="review-history"><header>Latest activity</header><div><span className="history-dot"/><span><b>Observation created</b><small>{formatDateTime(observation.createdAt)}</small></span></div>{observation.reviewedAt && <div><span className="history-dot"/><span><b>{stateLabel}</b><small>{formatDateTime(observation.reviewedAt)}</small></span></div>}</div>
+      </section>}
 
-      {tab === 'data' && <section className="structured-data"><header><span><Braces size={13}/>Structured result</span><Badge tone="green">Schema valid</Badge></header><div className="data-grid"><div><span>observation_id</span><code>{observation.id}</code></div><div><span>canonical_label</span><code>{observation.canonicalLabel}</code></div><div><span>entity_id</span><code>{observation.entityId ?? 'null'}</code></div><div><span>confidence</span><code>{observation.confidence}</code></div><div><span>requires_review</span><code>{String(observation.requiresReview)}</code></div><div><span>source_analysis_id</span><code>{observation.sourceAnalysisId ?? 'seed'}</code></div></div>{observation.policy&&<><header className="attribute-head"><span>Policy assessment</span><small>{observation.policy.profile}</small></header><pre>{JSON.stringify(observation.policy,null,2)}</pre></>}<header className="attribute-head"><span>Attributes</span><small>{Object.keys(observation.attributes).length} fields</small></header><pre>{JSON.stringify(observation.attributes,null,2)}</pre><header className="attribute-head"><span>Evidence regions</span><small>{observation.evidence.length} bindings</small></header><pre>{JSON.stringify(observation.evidence,null,2)}</pre></section>}
+      {tab === 'data' && <section className="structured-data"><header><span>Observation details</span><Badge>v{observation.version}</Badge></header><dl className="data-grid"><div><dt>Observation</dt><dd>{observation.id}</dd></div><div><dt>Label</dt><dd>{observation.canonicalLabel}</dd></div><div><dt>Entity</dt><dd>{observation.entityId ?? 'Unlinked'}</dd></div><div><dt>Model</dt><dd>{observation.sourceModel}</dd></div></dl>{observation.policy && <details className="policy-assessment" open><summary><ShieldCheck size={14}/>Confidence assessment<ChevronRight size={14}/></summary><div className="policy-score"><span><small>Initial</small><b>{confidence(observation.policy.modelConfidence)}</b></span><ArrowRight size={16}/><span><small>Adjusted</small><b>{confidence(observation.policy.adjustedConfidence)}</b></span><Badge>{titleCase(observation.policy.decision)}</Badge></div><ul>{observation.policy.reviewReasons.map(reason => <li key={reason}>{reason}</li>)}{observation.policy.appliedAdjustments.map((adjustment, index) => <li key={index}>{adjustment.explanation}</li>)}</ul></details>}<details open><summary>Attributes<Badge>{Object.keys(observation.attributes).length}</Badge></summary><pre>{JSON.stringify(observation.attributes, null, 2)}</pre></details><details><summary>Evidence coordinates<Badge>{observation.evidence.length}</Badge></summary><pre>{JSON.stringify(observation.evidence, null, 2)}</pre></details></section>}
     </div>
   </aside>
 }

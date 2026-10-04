@@ -60,6 +60,6 @@ export function initials(value: string): string {
 export function stableColor(value: string): string {
   let hash = 0
   for (let index = 0; index < value.length; index += 1) hash = value.charCodeAt(index) + ((hash << 5) - hash)
-  const palette = ['#6ea8ff', '#67d4a0', '#ffbd66', '#9c87ff', '#68e0ff', '#f07f9c']
+  const palette = ['#3448C5', '#0D9AFF', '#23436A', '#1B295D']
   return palette[Math.abs(hash) % palette.length]
 }

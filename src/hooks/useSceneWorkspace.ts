@@ -33,7 +33,7 @@ type WorkspaceAction =
   | { type: 'BOOT_SUCCESS'; health: HealthStatus; scenes: SceneSummary[]; scene: SceneWorkspace; graph: SceneGraph }
   | { type: 'BOOT_ERROR'; message: string }
   | { type: 'SELECT_SCENE'; sceneId: string }
-  | { type: 'SCENE_LOADED'; scene: SceneWorkspace; graph: SceneGraph }
+  | { type: 'SCENE_LOADED'; scene: SceneWorkspace; graph: SceneGraph; health: HealthStatus; scenes: SceneSummary[] }
   | { type: 'SELECT_OBSERVATION'; observationId: string; assetId?: string; entityId?: string }
   | { type: 'SELECT_ASSET'; assetId: string }
   | { type: 'SELECT_ENTITY'; entityId: string }
@@ -60,20 +60,25 @@ function reducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState
       const initialObservation = action.scene.observations.find(item => item.requiresReview) ?? action.scene.observations[0]
       const initialAsset = action.scene.assets.find(item => item.id === action.scene.coverAssetId) ?? action.scene.assets[0]
       return {
-        ...state, loading: false, health: action.health, scenes: action.scenes, scene: action.scene, graph: action.graph,
+        ...state, loading: false, error: undefined, health: action.health, scenes: action.scenes, scene: action.scene, graph: action.graph,
         selectedSceneId: action.scene.id, selectedObservationId: initialObservation?.id, selectedAssetId: initialAsset?.id,
         selectedEntityId: initialObservation?.entityId, jobs: action.scene.jobs, revision: action.health.revision,
       }
     }
     case 'BOOT_ERROR': return { ...state, loading: false, error: action.message }
-    case 'SELECT_SCENE': return { ...state, selectedSceneId: action.sceneId, loading: true, search: undefined }
+    case 'SELECT_SCENE': return {
+      ...state, selectedSceneId: action.sceneId, loading: true, error: undefined, search: undefined,
+      compare: state.selectedSceneId === action.sceneId ? state.compare : { enabled: false, position: 52 },
+    }
     case 'SCENE_LOADED': {
       const selectedStillExists = action.scene.observations.some(item => item.id === state.selectedObservationId)
       const selected = selectedStillExists
         ? action.scene.observations.find(item => item.id === state.selectedObservationId)
         : action.scene.observations.find(item => item.requiresReview) ?? action.scene.observations[0]
-      return { ...state, scene: action.scene, graph: action.graph, jobs: action.scene.jobs, loading: false,
-        selectedObservationId: selected?.id, selectedEntityId: selected?.entityId,
+      return { ...state, scene: action.scene, graph: action.graph, jobs: action.scene.jobs, loading: false, error: undefined,
+        health: action.health, scenes: action.scenes, revision: action.health.revision,
+        selectedObservationId: selected?.id,
+        selectedEntityId: action.scene.entities.some(item => item.id === state.selectedEntityId) ? state.selectedEntityId : selected?.entityId,
         selectedAssetId: state.selectedAssetId && action.scene.assets.some(item => item.id === state.selectedAssetId)
           ? state.selectedAssetId : action.scene.coverAssetId ?? action.scene.assets[0]?.id }
     }
@@ -93,7 +98,11 @@ function reducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState
       scene: { ...state.scene, observations: state.scene.observations.map(item => item.id === action.observation.id ? action.observation : item),
         reviewCount: state.scene.observations.filter(item => (item.id === action.observation.id ? action.observation : item).requiresReview).length },
     } : state
-    case 'TOGGLE_OVERLAY': return { ...state, [action.overlay]: action.value ?? !state[action.overlay] }
+    case 'TOGGLE_OVERLAY': {
+      const open = action.value ?? !state[action.overlay]
+      if (action.overlay === 'commandOpen' && open && (state.ingestOpen || state.pipelineOpen || state.scenarioOpen)) return state
+      return { ...state, [action.overlay]: open }
+    }
     case 'CLEAR_ERROR': return { ...state, error: undefined }
     default: return state
   }
@@ -102,14 +111,21 @@ function reducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState
 export function useSceneWorkspace() {
   const [state, dispatch] = useReducer(reducer, initialState)
   const sceneRequest = useRef<AbortController | undefined>(undefined)
+  const selectedSceneId = useRef(state.selectedSceneId)
+  selectedSceneId.current = state.selectedSceneId
 
   const loadScene = useCallback(async (sceneId: string) => {
     sceneRequest.current?.abort()
     const controller = new AbortController()
     sceneRequest.current = controller
     try {
-      const [scene, graph] = await Promise.all([api.scene(sceneId, controller.signal), api.graph(sceneId, { signal: controller.signal })])
-      if (!controller.signal.aborted) dispatch({ type: 'SCENE_LOADED', scene, graph })
+      const [scene, graph, health, scenes] = await Promise.all([
+        api.scene(sceneId, controller.signal),
+        api.graph(sceneId, { signal: controller.signal }),
+        api.health(controller.signal),
+        api.scenes({ signal: controller.signal }),
+      ])
+      if (!controller.signal.aborted) dispatch({ type: 'SCENE_LOADED', scene, graph, health, scenes })
     } catch (error) {
       if (!controller.signal.aborted) dispatch({ type: 'BOOT_ERROR', message: error instanceof Error ? error.message : String(error) })
     }
@@ -131,12 +147,17 @@ export function useSceneWorkspace() {
   useEffect(() => { void bootstrap(); return () => sceneRequest.current?.abort() }, []) // bootstrap once
 
   useEffect(() => {
+    const overlayOpen = state.commandOpen || state.ingestOpen || state.pipelineOpen || state.scenarioOpen
     const listener = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); dispatch({ type: 'TOGGLE_OVERLAY', overlay: 'commandOpen', value: true }) }
+      if (event.defaultPrevented) return
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        if (!overlayOpen) dispatch({ type: 'TOGGLE_OVERLAY', overlay: 'commandOpen', value: true })
+      }
       if (event.key === 'Escape') {
         for (const overlay of ['commandOpen', 'ingestOpen', 'pipelineOpen', 'scenarioOpen'] as const) dispatch({ type: 'TOGGLE_OVERLAY', overlay, value: false })
       }
-      if (!event.metaKey && !event.ctrlKey && !event.altKey && !isEditable(event.target)) {
+      if (!overlayOpen && !event.metaKey && !event.ctrlKey && !event.altKey && !isEditable(event.target)) {
         if (event.key === '1') dispatch({ type: 'SET_MODE', mode: 'canvas' })
         if (event.key === '2') dispatch({ type: 'SET_MODE', mode: 'graph' })
         if (event.key === '3') dispatch({ type: 'SET_MODE', mode: 'timeline' })
@@ -145,7 +166,7 @@ export function useSceneWorkspace() {
     }
     addEventListener('keydown', listener)
     return () => removeEventListener('keydown', listener)
-  }, [])
+  }, [state.commandOpen, state.ingestOpen, state.pipelineOpen, state.scenarioOpen])
 
   useEffect(() => {
     if (!state.jobs.some(item => item.status === 'queued' || item.status === 'running')) return
@@ -160,7 +181,7 @@ export function useSceneWorkspace() {
   }, [state.jobs, state.selectedSceneId, loadScene])
 
   const actions = useMemo(() => ({
-    selectScene(sceneId: string) { dispatch({ type: 'SELECT_SCENE', sceneId }); void loadScene(sceneId) },
+    selectScene(sceneId: string) { selectedSceneId.current = sceneId; dispatch({ type: 'SELECT_SCENE', sceneId }); void loadScene(sceneId) },
     selectObservation(observationId: string) {
       const observation = state.scene?.observations.find(item => item.id === observationId)
       dispatch({ type: 'SELECT_OBSERVATION', observationId, assetId: observation?.evidence[0]?.assetId, entityId: observation?.entityId })
@@ -180,6 +201,7 @@ export function useSceneWorkspace() {
     async review(observationId: string, input: ReviewInput) {
       const result = await api.review(observationId, input)
       dispatch({ type: 'PATCH_OBSERVATION', observation: result.observation })
+      await loadScene(selectedSceneId.current)
       return result
     },
     async analyze(assetId: string, lensId: LensId, force = false) {
